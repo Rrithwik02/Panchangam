@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
+import { getMoonPhaseFromTithi, type MoonPhaseInfo } from "@/lib/moon-phase";
 import {
   type DayPhaseInfo,
   formatCurrentTime,
@@ -17,6 +18,7 @@ import {
 
 interface TimeOfDayContextValue {
   info: DayPhaseInfo;
+  moonPhase: MoonPhaseInfo;
   currentTime: string;
   sunrise: string;
   sunset: string;
@@ -25,8 +27,12 @@ interface TimeOfDayContextValue {
 const TimeOfDayContext = createContext<TimeOfDayContextValue | null>(null);
 
 export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
-  const sunrise = todaysPanchangam.sunrise;
-  const sunset = todaysPanchangam.sunset;
+  const { sunrise, sunset, moonrise, moonset, tithi, paksha } = todaysPanchangam;
+
+  const moonPhase = useMemo(
+    () => getMoonPhaseFromTithi(tithi, paksha),
+    [tithi, paksha]
+  );
 
   const [now, setNow] = useState<Date | null>(null);
 
@@ -39,8 +45,16 @@ export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
   }, [tick]);
 
   const info = useMemo(
-    () => getDayPhaseInfo(now ?? new Date(), sunrise, sunset),
-    [now, sunrise, sunset]
+    () =>
+      getDayPhaseInfo(
+        now ?? new Date(),
+        sunrise,
+        sunset,
+        moonrise,
+        moonset,
+        moonPhase
+      ),
+    [now, sunrise, sunset, moonrise, moonset, moonPhase]
   );
 
   const currentTime = useMemo(
@@ -57,11 +71,16 @@ export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--phase-stars-opacity", String(info.starsOpacity));
     root.style.setProperty("--sky-progress", String(info.skyProgress));
     root.dataset.dayPhase = info.phase;
+    root.dataset.theme = info.theme;
+    root.style.setProperty("--sun-x", `${(info.sun.x / 800) * 100}%`);
+    root.style.setProperty("--sun-y", `${(info.sun.y / 500) * 100}%`);
+    root.style.setProperty("--moon-x", `${(info.moon.x / 800) * 100}%`);
+    root.style.setProperty("--moon-y", `${(info.moon.y / 500) * 100}%`);
   }, [info, now]);
 
   const value = useMemo(
-    () => ({ info, currentTime, sunrise, sunset }),
-    [info, currentTime, sunrise, sunset]
+    () => ({ info, moonPhase, currentTime, sunrise, sunset }),
+    [info, moonPhase, currentTime, sunrise, sunset]
   );
 
   return (

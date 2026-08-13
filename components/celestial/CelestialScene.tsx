@@ -1,87 +1,30 @@
 "use client";
 
-import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { useReducedMotion } from "@/lib/motion";
 import { useTimeOfDayOptional } from "./TimeOfDayProvider";
-
-gsap.registerPlugin(useGSAP);
-
-function Stars() {
-  const stars = Array.from({ length: 24 }, (_, i) => ({
-    id: i,
-    x: (i * 17 + 11) % 100,
-    y: (i * 23 + 7) % 55,
-    size: 1 + (i % 3) * 0.5,
-    delay: (i % 5) * 0.4,
-  }));
-
-  return (
-    <g className="celestial-stars" aria-hidden="true">
-      {stars.map((star) => (
-        <circle
-          key={star.id}
-          cx={`${star.x}%`}
-          cy={`${star.y}%`}
-          r={star.size}
-          fill="currentColor"
-          className="celestial-star"
-          style={{ animationDelay: `${star.delay}s` }}
-        />
-      ))}
-    </g>
-  );
-}
+import { MoonBody, StarField, SunBody } from "./CelestialIcons";
 
 export function CelestialScene({ className = "" }: { className?: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sunRef = useRef<SVGGElement>(null);
-  const moonRef = useRef<SVGGElement>(null);
-  const raysRef = useRef<SVGGElement>(null);
-  const reduced = useReducedMotion();
   const timeOfDay = useTimeOfDayOptional();
 
-  const sunOpacity = timeOfDay?.info.sunOpacity ?? 1;
-  const moonOpacity = timeOfDay?.info.moonOpacity ?? 0;
-  const starsOpacity = timeOfDay?.info.starsOpacity ?? 0;
+  const info = timeOfDay?.info;
+  const moonPhase = timeOfDay?.moonPhase;
 
-  useGSAP(
-    () => {
-      if (reduced || !sunRef.current || !raysRef.current) return;
+  const sunOpacity = info?.sunOpacity ?? 0;
+  const moonOpacity = info?.moonOpacity ?? 0;
+  const starsOpacity = info?.starsOpacity ?? 0;
 
-      gsap.to(raysRef.current, {
-        rotation: 360,
-        transformOrigin: "50% 50%",
-        duration: 120,
-        repeat: -1,
-        ease: "none",
-      });
+  const sunX = info?.sun.x ?? 72;
+  const sunY = info?.sun.y ?? 390;
+  const moonX = info?.moon.x ?? 728;
+  const moonY = info?.moon.y ?? 390;
 
-      gsap.to(sunRef.current, {
-        y: -6,
-        duration: 4,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
-      if (moonRef.current) {
-        gsap.to(moonRef.current, {
-          y: 4,
-          duration: 5.5,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
-      }
-    },
-    { scope: containerRef, dependencies: [reduced] }
-  );
+  const illumination = moonPhase?.illumination ?? 0.5;
+  const isWaxing = moonPhase?.isWaxing ?? true;
+  const showMoon = moonPhase?.isVisible !== false && illumination > 0.02;
+  const shadowColor = info?.theme === "light" ? "#faf8f4" : "#0f1117";
 
   return (
     <div
-      ref={containerRef}
       className={`celestial-scene pointer-events-none absolute inset-0 overflow-hidden ${className}`}
       aria-hidden="true"
     >
@@ -92,65 +35,52 @@ export function CelestialScene({ className = "" }: { className?: string }) {
       >
         <defs>
           <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FFD88A" stopOpacity="0.9" />
-            <stop offset="45%" stopColor="#E07A2F" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="#FFD88A" stopOpacity="0.95" />
+            <stop offset="50%" stopColor="#E07A2F" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#E07A2F" stopOpacity="0" />
           </radialGradient>
           <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#F4F0E8" stopOpacity="0.95" />
-            <stop offset="55%" stopColor="#C9D4E8" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#8B9BB5" stopOpacity="0" />
+            <stop offset="0%" stopColor="#E8EEF8" stopOpacity="0.9" />
+            <stop offset="55%" stopColor="#9AABB8" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#5A6A78" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="moonSurface" cx="40%" cy="35%" r="60%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </radialGradient>
           <filter id="softBlur">
-            <feGaussianBlur stdDeviation="8" />
+            <feGaussianBlur stdDeviation="6" />
           </filter>
         </defs>
 
         <g
           className="celestial-stars-group transition-opacity duration-[2000ms]"
           style={{ opacity: starsOpacity }}
-          fill="#F4F0E8"
         >
-          <Stars />
+          <StarField />
         </g>
 
         <g
-          ref={moonRef}
-          className="celestial-moon transition-opacity duration-[2000ms]"
-          style={{ opacity: moonOpacity }}
-          transform="translate(620, 95)"
+          className="celestial-moon transition-[opacity,transform] duration-[1200ms] ease-in-out"
+          style={{ opacity: showMoon ? moonOpacity : 0 }}
+          transform={`translate(${moonX}, ${moonY})`}
         >
-          <circle cx="0" cy="0" r="72" fill="url(#moonGlow)" filter="url(#softBlur)" />
-          <circle cx="0" cy="0" r="28" fill="#F2EDE4" />
-          <circle cx="-8" cy="-6" r="6" fill="#E8E2D8" opacity="0.5" />
-          <circle cx="10" cy="8" r="4" fill="#E8E2D8" opacity="0.35" />
+          {showMoon && (
+            <MoonBody
+              size={22}
+              illumination={illumination}
+              isWaxing={isWaxing}
+              shadowColor={shadowColor}
+            />
+          )}
         </g>
 
         <g
-          ref={sunRef}
-          className="celestial-sun transition-opacity duration-[2000ms]"
+          className="celestial-sun transition-[opacity,transform] duration-[1200ms] ease-in-out"
           style={{ opacity: sunOpacity }}
-          transform="translate(640, 110)"
+          transform={`translate(${sunX}, ${sunY})`}
         >
-          <circle cx="0" cy="0" r="90" fill="url(#sunGlow)" filter="url(#softBlur)" />
-          <g ref={raysRef}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <line
-                key={i}
-                x1="0"
-                y1="-34"
-                x2="0"
-                y2="-48"
-                stroke="#E07A2F"
-                strokeWidth="2"
-                strokeLinecap="round"
-                opacity="0.45"
-                transform={`rotate(${i * 30})`}
-              />
-            ))}
-          </g>
-          <circle cx="0" cy="0" r="26" fill="#FFD88A" />
-          <circle cx="0" cy="0" r="26" fill="#E07A2F" opacity="0.12" />
+          <SunBody size={24} />
         </g>
       </svg>
     </div>
