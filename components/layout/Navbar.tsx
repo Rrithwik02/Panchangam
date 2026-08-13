@@ -27,9 +27,12 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-50 transition-all duration-500",
         scrolled
-          ? "border-b border-border/80 bg-background/85 shadow-sm backdrop-blur-xl"
-          : "bg-background/30 backdrop-blur-sm"
+          ? "border-b border-border/80 shadow-sm backdrop-blur-xl"
+          : "backdrop-blur-sm"
       )}
+      style={{
+        backgroundColor: scrolled ? "var(--nav-bg)" : "transparent",
+      }}
     >
       <nav
         className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"

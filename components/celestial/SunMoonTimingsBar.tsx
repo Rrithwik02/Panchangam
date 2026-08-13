@@ -1,7 +1,7 @@
 "use client";
 
-import { Sunrise, Sunset, Sun, Moon } from "lucide-react";
-import { AnimatedSection } from "@/components/AnimatedSection";
+import { Moon, Sun, Sunrise, Sunset } from "lucide-react";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { useTimeOfDayOptional } from "@/components/celestial/TimeOfDayProvider";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
 
@@ -10,13 +10,22 @@ export function SunMoonTimingsBar() {
   const data = todaysPanchangam;
   const phase = timeOfDay?.info.phase ?? "day";
   const currentTime = timeOfDay?.currentTime ?? "--:--";
+  const moonPhase = timeOfDay?.moonPhase;
 
   const PhaseIcon =
     phase === "night" ? Moon : phase === "dusk" ? Sunset : Sun;
 
+  const moonPhaseLabel = moonPhase
+    ? moonPhase.illumination <= 0.02
+      ? "Amavasya — no moon"
+      : moonPhase.illumination >= 0.98
+        ? "Pournami — full moon"
+        : `${Math.round(moonPhase.illumination * 100)}% illuminated`
+    : null;
+
   return (
-    <AnimatedSection className="mx-auto mt-10 max-w-3xl">
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-1 shadow-sm">
+    <ScrollReveal className="mx-auto mt-10 max-w-3xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-1 shadow-sm transition-colors duration-[1500ms]">
         <div className="celestial-timing-track absolute inset-x-0 top-0 h-full opacity-60" aria-hidden="true" />
         <div className="relative grid grid-cols-3 divide-x divide-border">
           <div className="flex flex-col items-center gap-1 px-4 py-5 text-center sm:px-6">
@@ -36,6 +45,9 @@ export function SunMoonTimingsBar() {
             <span className="text-xs text-muted capitalize">
               {timeOfDay?.info.label ?? "Daytime"}
             </span>
+            {moonPhaseLabel && (
+              <span className="mt-0.5 text-xs text-gold">{moonPhaseLabel}</span>
+            )}
           </div>
 
           <div className="flex flex-col items-center gap-1 px-4 py-5 text-center sm:px-6">
@@ -47,6 +59,6 @@ export function SunMoonTimingsBar() {
           </div>
         </div>
       </div>
-    </AnimatedSection>
+    </ScrollReveal>
   );
 }

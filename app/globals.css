@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* Light theme (daytime) */
+:root,
+html[data-theme="light"] {
   --background: #faf8f4;
   --foreground: #1a1a1a;
   --accent: #e07a2f;
@@ -11,12 +13,30 @@
   --border: #e8e4dc;
   --card: #ffffff;
   --card-muted: #f5f2ec;
-  --sky-top: #faf8f4;
-  --sky-bottom: #f5efe4;
+  --hero-top: #faf8f4;
+  --hero-mid: #f5efe4;
+  --nav-bg: rgba(250, 248, 244, 0.85);
   --sky-progress: 0.5;
   --phase-sun-opacity: 1;
   --phase-moon-opacity: 0;
   --phase-stars-opacity: 0;
+}
+
+/* Dark theme (nighttime) */
+html[data-theme="dark"] {
+  --background: #0f1117;
+  --foreground: #f2efe8;
+  --accent: #e8934a;
+  --accent-hover: #d47a30;
+  --gold: #d4b04a;
+  --dark: #0a0c10;
+  --muted: #9a9590;
+  --border: #2a2e38;
+  --card: #181b22;
+  --card-muted: #12151b;
+  --hero-top: #0c1018;
+  --hero-mid: #121826;
+  --nav-bg: rgba(15, 17, 23, 0.88);
 }
 
 @theme inline {
@@ -48,9 +68,12 @@ html {
   }
 
   .celestial-star,
+  .celestial-sun,
+  .celestial-moon,
   .hero-gradient,
   .celestial-timing-track {
     animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -60,6 +83,9 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.6;
+  transition:
+    background-color 1.5s ease,
+    color 1.5s ease;
 }
 
 .text-hero {
@@ -84,16 +110,34 @@ body {
   line-height: 1.4;
 }
 
-/* Time-of-day sky — shifts with sunrise/sunset */
+/* Hero sky — light during day, dark at night */
 .hero-gradient {
   position: relative;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, #1a2340 calc(var(--sky-progress) * 55%), #faf8f4) 0%,
-      color-mix(in srgb, #e07a2f calc((1 - var(--sky-progress)) * 18%), #f5efe4) 42%,
-      var(--background) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    var(--hero-top) 0%,
+    var(--hero-mid) 45%,
+    var(--background) 100%
+  );
+  transition: background 1.5s ease;
+}
+
+html[data-theme="light"] .hero-gradient {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff4e6 70%, var(--hero-top)) 0%,
+    color-mix(in srgb, #ffe8cc 30%, var(--hero-mid)) 40%,
+    var(--background) 100%
+  );
+}
+
+html[data-theme="dark"] .hero-gradient {
+  background: linear-gradient(
+    180deg,
+    #0a0e18 0%,
+    #121826 42%,
+    var(--background) 100%
+  );
 }
 
 .hero-gradient::before {
@@ -102,35 +146,26 @@ body {
   inset: 0;
   background:
     radial-gradient(
-      ellipse 70% 55% at 78% 18%,
-      rgba(224, 122, 47, calc(var(--phase-sun-opacity) * 0.14)),
-      transparent 70%
+      ellipse 65% 50% at var(--sun-x, 78%) var(--sun-y, 18%),
+      rgba(224, 122, 47, calc(var(--phase-sun-opacity) * 0.16)),
+      transparent 68%
     ),
     radial-gradient(
-      ellipse 50% 40% at 82% 12%,
-      rgba(201, 212, 232, calc(var(--phase-moon-opacity) * 0.2)),
-      transparent 65%
+      ellipse 45% 38% at var(--moon-x, 82%) var(--moon-y, 14%),
+      rgba(180, 200, 230, calc(var(--phase-moon-opacity) * 0.18)),
+      transparent 62%
     );
   pointer-events: none;
+  transition: opacity 1.5s ease;
 }
 
 .hero-gradient::after {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.035;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hero-gradient {
-    transition: background 2s ease;
-  }
-
-  .hero-gradient::before {
-    transition: opacity 2s ease;
-  }
 }
 
 .celestial-star {
@@ -140,10 +175,10 @@ body {
 @keyframes starTwinkle {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   50% {
-    opacity: 0.9;
+    opacity: 1;
   }
 }
 
@@ -156,6 +191,15 @@ body {
   );
 }
 
+html[data-theme="dark"] .celestial-timing-track {
+  background: linear-gradient(
+    90deg,
+    rgba(224, 122, 47, 0.12),
+    rgba(255, 216, 138, 0.08),
+    rgba(140, 160, 200, 0.12)
+  );
+}
+
 .card-glow {
   box-shadow:
     0 0 0 1px rgba(224, 122, 47, 0.08),
@@ -163,8 +207,15 @@ body {
     0 0 80px -20px rgba(224, 122, 47, calc(var(--phase-sun-opacity) * 0.15));
 }
 
+html[data-theme="dark"] .card-glow {
+  box-shadow:
+    0 0 0 1px rgba(232, 147, 74, 0.12),
+    0 24px 48px -12px rgba(0, 0, 0, 0.45),
+    0 0 60px -20px rgba(180, 200, 230, calc(var(--phase-moon-opacity) * 0.12));
+}
+
 .card-glass {
-  background: color-mix(in srgb, var(--card) 88%, transparent);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
   backdrop-filter: blur(12px);
 }
 
