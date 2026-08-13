@@ -1,12 +1,22 @@
-import { AnimatedSection } from "@/components/AnimatedSection";
+"use client";
+
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
+import { CelestialScene } from "@/components/celestial/CelestialScene";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
 
 export function DailyHabitSection() {
   return (
-    <section className="bg-dark px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="habit-heading">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
-        <AnimatedSection>
+    <section
+      className="relative overflow-hidden bg-dark px-4 py-20 sm:px-6 lg:px-8"
+      aria-labelledby="habit-heading"
+    >
+      <div className="absolute inset-0 opacity-40">
+        <CelestialScene />
+      </div>
+
+      <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+        <ScrollReveal>
           <h2 id="habit-heading" className="text-section-heading font-semibold text-white">
             A better way to start your day.
           </h2>
@@ -14,11 +24,11 @@ export function DailyHabitSection() {
             Make Panchangam part of your morning routine. Open once, know what&apos;s
             important, and get on with your day.
           </p>
-        </AnimatedSection>
+        </ScrollReveal>
 
-        <AnimatedSection delay={0.15}>
+        <ScrollReveal delay={0.12}>
           <PanchangamCard data={todaysPanchangam} variant="compact" />
-        </AnimatedSection>
+        </ScrollReveal>
       </div>
     </section>
   );

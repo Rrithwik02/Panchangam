@@ -1,8 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { fadeUp, getMotionProps, getTransition, useReducedMotion } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 interface AnimatedSectionProps {
   children: React.ReactNode;
@@ -15,17 +13,9 @@ export function AnimatedSection({
   className,
   delay = 0,
 }: AnimatedSectionProps) {
-  const reduced = useReducedMotion();
-  const motionProps = getMotionProps(reduced);
-
   return (
-    <motion.div
-      variants={fadeUp}
-      transition={{ ...getTransition(reduced), delay: reduced ? 0 : delay }}
-      {...motionProps}
-      className={cn(className)}
-    >
+    <ScrollReveal className={className} delay={delay}>
       {children}
-    </motion.div>
+    </ScrollReveal>
   );
 }

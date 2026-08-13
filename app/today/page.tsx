@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SunMoonTimingsBar } from "@/components/celestial/SunMoonTimingsBar";
 import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
 import { Button } from "@/components/ui/button";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
@@ -13,9 +14,9 @@ export const metadata: Metadata = {
 export default function TodayPage() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <header className="border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="font-semibold">
+          <Link href="/" className="font-semibold transition-opacity hover:opacity-80">
             ← Panchangam
           </Link>
           <Button asChild variant="secondary" size="sm">
@@ -24,10 +25,19 @@ export default function TodayPage() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-semibold">Today&apos;s Panchangam</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Today&apos;s Panchangam
+        </h1>
         <p className="mt-2 text-muted">
           Complete Panchangam for {todaysPanchangam.dateLabel}
         </p>
+
+        <div className="mt-8">
+          <div className="-mx-4 sm:mx-0">
+            <SunMoonTimingsBar />
+          </div>
+        </div>
+
         <div className="mt-10">
           <PanchangamCard data={todaysPanchangam} variant="full" />
         </div>
