@@ -1,5 +1,8 @@
+"use client";
+
 import type { PanchangamDay } from "@/lib/types/panchangam";
 import { cn } from "@/lib/utils";
+import { useTimeOfDayOptional } from "@/components/celestial/TimeOfDayProvider";
 import { DayElementsGroup } from "./DayElementsGroup";
 import { FestivalsList } from "./FestivalsList";
 import { LocationBadge } from "./LocationBadge";
@@ -35,11 +38,14 @@ export function PanchangamCard({
   variant = "full",
   className,
 }: PanchangamCardProps) {
+  const timeOfDay = useTimeOfDayOptional();
+  const greeting = timeOfDay?.info.greeting ?? "Good Morning";
+
   if (variant === "hero") {
     return (
       <div
         className={cn(
-          "w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl shadow-dark/5",
+          "card-glow card-glass w-full max-w-md rounded-2xl border border-border/80 p-6",
           className
         )}
       >
@@ -72,7 +78,7 @@ export function PanchangamCard({
           className
         )}
       >
-        <p className="text-sm text-white/60">Good Morning</p>
+        <p className="text-sm text-white/60">{greeting}</p>
         <p className="mt-1 text-xl font-semibold text-white">
           {data.vara} · {data.dateLabel}
         </p>

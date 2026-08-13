@@ -1,4 +1,6 @@
-import { AnimatedSection } from "@/components/AnimatedSection";
+"use client";
+
+import { ScrollReveal } from "@/components/ScrollReveal";
 import {
   Calendar,
   Clock,
@@ -50,23 +52,25 @@ export function FeaturesSection() {
       aria-labelledby="features-heading"
     >
       <div className="mx-auto max-w-6xl">
-        <AnimatedSection className="text-center">
+        <ScrollReveal className="text-center">
           <h2 id="features-heading" className="text-section-heading font-semibold">
             Everything important, right where you need it.
           </h2>
-        </AnimatedSection>
+        </ScrollReveal>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
-            <AnimatedSection key={feature.title} delay={i * 0.08}>
-              <div className="group h-full rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-md">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-white">
+            <ScrollReveal key={feature.title} delay={i * 0.06}>
+              <div className="group h-full rounded-2xl border border-border bg-card p-6 transition-all duration-500 hover:-translate-y-1 hover:border-accent/35 hover:shadow-lg hover:shadow-accent/5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-500 group-hover:scale-105 group-hover:bg-accent group-hover:text-white group-hover:shadow-md group-hover:shadow-accent/20">
                   <feature.icon className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-sm text-muted">{feature.description}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  {feature.description}
+                </p>
               </div>
-            </AnimatedSection>
+            </ScrollReveal>
           ))}
         </div>
       </div>

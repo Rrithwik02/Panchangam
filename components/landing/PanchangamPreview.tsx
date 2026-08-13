@@ -1,4 +1,5 @@
-import { AnimatedSection } from "@/components/AnimatedSection";
+import { ScrollReveal } from "@/components/ScrollReveal";
+import { SunMoonTimingsBar } from "@/components/celestial/SunMoonTimingsBar";
 import { DayElementsGroup } from "@/components/panchangam/DayElementsGroup";
 import { FestivalsList } from "@/components/panchangam/FestivalsList";
 import { LocationBadge } from "@/components/panchangam/LocationBadge";
@@ -17,14 +18,14 @@ function PreviewGroup({
   delay?: number;
 }) {
   return (
-    <AnimatedSection delay={delay}>
-      <div className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-lg hover:shadow-dark/5">
+    <ScrollReveal delay={delay}>
+      <div className="group rounded-2xl border border-border bg-card p-6 transition-all duration-500 hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-lg hover:shadow-accent/5">
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-accent">
           {title}
         </h3>
         {children}
       </div>
-    </AnimatedSection>
+    </ScrollReveal>
   );
 }
 
@@ -34,30 +35,34 @@ export function PanchangamPreview() {
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="preview-heading">
       <div className="mx-auto max-w-6xl">
-        <AnimatedSection className="text-center">
+        <ScrollReveal className="text-center">
           <h2 id="preview-heading" className="text-section-heading font-semibold">
             Everything you need for today.
           </h2>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <p className="text-muted">{data.dateLabel} · {data.vara}</p>
+            <p className="text-muted">
+              {data.dateLabel} · {data.vara}
+            </p>
             <LocationBadge location={data.location} />
           </div>
-        </AnimatedSection>
+        </ScrollReveal>
+
+        <SunMoonTimingsBar />
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <PreviewGroup title="Day" delay={0.1}>
+          <PreviewGroup title="Day" delay={0.05}>
             <DayElementsGroup data={data} />
           </PreviewGroup>
-          <PreviewGroup title="Sun & Moon" delay={0.15}>
+          <PreviewGroup title="Sun & Moon" delay={0.1}>
             <SunMoonGroup data={data} />
           </PreviewGroup>
-          <PreviewGroup title="Important Timings" delay={0.2}>
+          <PreviewGroup title="Important Timings" delay={0.15}>
             <TimingsGroup data={data} />
           </PreviewGroup>
-          <PreviewGroup title="Special Timings" delay={0.25}>
+          <PreviewGroup title="Special Timings" delay={0.2}>
             <SpecialTimingsGroup data={data} />
           </PreviewGroup>
-          <PreviewGroup title="Today" delay={0.3}>
+          <PreviewGroup title="Today" delay={0.25}>
             <FestivalsList data={data} />
           </PreviewGroup>
         </div>

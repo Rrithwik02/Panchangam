@@ -1,4 +1,6 @@
-import { AnimatedSection } from "@/components/AnimatedSection";
+"use client";
+
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const cards = [
   {
@@ -25,21 +27,23 @@ export function WhyPanchangam() {
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="why-heading">
       <div className="mx-auto max-w-6xl">
-        <AnimatedSection className="text-center">
+        <ScrollReveal className="text-center">
           <h2 id="why-heading" className="text-section-heading font-semibold">
             Traditional knowledge. Modern experience.
           </h2>
-        </AnimatedSection>
+        </ScrollReveal>
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {cards.map((card, i) => (
-            <AnimatedSection key={card.title} delay={i * 0.1}>
-              <div className="group h-full rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-lg hover:shadow-dark/5">
-                <span className="text-sm font-semibold text-accent">{card.number}</span>
+            <ScrollReveal key={card.title} delay={i * 0.08}>
+              <div className="group h-full rounded-2xl border border-border bg-card p-8 transition-all duration-500 hover:-translate-y-1 hover:border-accent/40 hover:shadow-xl hover:shadow-dark/5">
+                <span className="text-sm font-semibold tabular-nums text-accent">
+                  {card.number}
+                </span>
                 <h3 className="mt-4 text-xl font-semibold">{card.title}</h3>
-                <p className="mt-3 text-muted">{card.description}</p>
+                <p className="mt-3 leading-relaxed text-muted">{card.description}</p>
               </div>
-            </AnimatedSection>
+            </ScrollReveal>
           ))}
         </div>
       </div>
