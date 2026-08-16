@@ -3,6 +3,8 @@
 /* Light theme (daytime) */
 :root,
 html[data-theme="light"] {
+  --app-font-sans: "Segoe UI", system-ui, sans-serif;
+  --app-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --background: #faf8f4;
   --foreground: #1a1a1a;
   --accent: #e07a2f;
@@ -50,8 +52,8 @@ html[data-theme="dark"] {
   --color-border: var(--border);
   --color-card: var(--card);
   --color-card-muted: var(--card-muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
 }
 
 * {
@@ -80,7 +82,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--app-font-sans);
   font-size: 1rem;
   line-height: 1.6;
   transition:

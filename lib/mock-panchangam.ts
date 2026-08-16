@@ -9,7 +9,7 @@ export const todaysPanchangam: PanchangamDay = {
   nakshatra: "Swati",
   yoga: "Siddha",
   karana: "Vanija",
-  location: "Global",
+  location: "Reference data",
   sunrise: "05:58 AM",
   sunset: "06:42 PM",
   moonrise: "04:12 PM",
