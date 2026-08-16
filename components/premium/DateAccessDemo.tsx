@@ -86,7 +86,7 @@ export function DateAccessDemo() {
 
         <AnimatedSection delay={0.15}>
           <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card">
-            {dateAccessItems.map((item, i) => (
+            {dateAccessItems.map((item) => (
               <button
                 key={`${item.label}-${item.date}`}
                 type="button"

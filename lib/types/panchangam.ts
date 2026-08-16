@@ -37,3 +37,28 @@ export interface DateAccessItem {
   access: DateAccessType;
   previewFields?: string[];
 }
+
+export interface LocationParameters {
+  latitude: number | null;
+  longitude: number | null;
+  timezone: string;
+}
+
+export interface PanchangamApiMeta {
+  location: LocationParameters;
+  calculation_source: "dynamic" | "precomputed" | "reference";
+}
+
+export interface PanchangamApiSuccessResponse {
+  success: true;
+  data: PanchangamDay;
+  meta: PanchangamApiMeta;
+}
+
+export interface PanchangamApiErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+  };
+}

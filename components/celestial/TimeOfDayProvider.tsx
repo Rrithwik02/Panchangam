@@ -34,12 +34,11 @@ export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
     [tithi, paksha]
   );
 
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date>(() => new Date());
 
   const tick = useCallback(() => setNow(new Date()), []);
 
   useEffect(() => {
-    tick();
     const interval = window.setInterval(tick, 60_000);
     return () => window.clearInterval(interval);
   }, [tick]);
@@ -47,7 +46,7 @@ export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
   const info = useMemo(
     () =>
       getDayPhaseInfo(
-        now ?? new Date(),
+        now,
         sunrise,
         sunset,
         moonrise,
@@ -58,13 +57,11 @@ export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
   );
 
   const currentTime = useMemo(
-    () => (now ? formatCurrentTime(now) : "--:--"),
+    () => formatCurrentTime(now),
     [now]
   );
 
   useEffect(() => {
-    if (!now) return;
-
     const root = document.documentElement;
     root.style.setProperty("--phase-sun-opacity", String(info.sunOpacity));
     root.style.setProperty("--phase-moon-opacity", String(info.moonOpacity));

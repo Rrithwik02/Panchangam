@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SunMoonTimingsBar } from "@/components/celestial/SunMoonTimingsBar";
-import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
+import { LocationAwarePanchangam } from "@/components/panchangam/LocationAwarePanchangam";
 import { Button } from "@/components/ui/button";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
 import type { Metadata } from "next";
@@ -39,7 +39,7 @@ export default function TodayPage() {
         </div>
 
         <div className="mt-10">
-          <PanchangamCard data={todaysPanchangam} variant="full" />
+          <LocationAwarePanchangam data={todaysPanchangam} />
         </div>
       </main>
     </div>

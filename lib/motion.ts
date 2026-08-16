@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import type { Transition, Variants } from "framer-motion";
 
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(media.matches);
     const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);
