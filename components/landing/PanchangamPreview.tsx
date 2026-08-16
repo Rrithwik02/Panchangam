@@ -6,7 +6,7 @@ import { LocationBadge } from "@/components/panchangam/LocationBadge";
 import { SpecialTimingsGroup } from "@/components/panchangam/SpecialTimingsGroup";
 import { SunMoonGroup } from "@/components/panchangam/SunMoonGroup";
 import { TimingsGroup } from "@/components/panchangam/TimingsGroup";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 
 function PreviewGroup({
   title,
@@ -29,8 +29,11 @@ function PreviewGroup({
   );
 }
 
-export function PanchangamPreview() {
-  const data = todaysPanchangam;
+interface PanchangamPreviewProps {
+  data: PanchangamDay;
+}
+
+export function PanchangamPreview({ data }: PanchangamPreviewProps) {
 
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8" aria-labelledby="preview-heading">
@@ -47,7 +50,7 @@ export function PanchangamPreview() {
           </div>
         </ScrollReveal>
 
-        <SunMoonTimingsBar />
+        <SunMoonTimingsBar data={data} />
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <PreviewGroup title="Day" delay={0.05}>

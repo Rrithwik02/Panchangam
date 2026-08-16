@@ -4,8 +4,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
-import { todaysPanchangam, tomorrowPreview } from "@/lib/mock-panchangam";
 import { useReducedMotion } from "@/lib/motion";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 import { Calendar, Lock, Search } from "lucide-react";
 
 const views = [
@@ -31,18 +31,38 @@ const views = [
   },
 ];
 
-function MockPanel({ type }: { type: (typeof views)[number]["content"] }) {
+function formatShortDate(date: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+function MockPanel({
+  type,
+  todayData,
+  tomorrowData,
+}: {
+  type: (typeof views)[number]["content"];
+  todayData: PanchangamDay;
+  tomorrowData: PanchangamDay;
+}) {
   if (type === "today") {
-    return <PanchangamCard data={todaysPanchangam} variant="hero" className="scale-90" />;
+    return <PanchangamCard data={todayData} variant="hero" className="scale-90" />;
   }
 
   if (type === "dates") {
-    const dates = ["13 Aug", "14 Aug", "15 Aug", "16 Aug"];
+    const baseDate = new Date(`${todayData.date}T00:00:00Z`);
+    const dates = Array.from({ length: 4 }, (_, index) => {
+      const current = new Date(baseDate);
+      current.setUTCDate(current.getUTCDate() + index);
+      return formatShortDate(current.toISOString().slice(0, 10));
+    });
     return (
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-medium">
           <Calendar className="h-4 w-4 text-accent" />
-          August 2026
+          Calendar view
         </div>
         <div className="grid grid-cols-4 gap-2">
           {dates.map((d, i) => (
@@ -88,20 +108,26 @@ function MockPanel({ type }: { type: (typeof views)[number]["content"] }) {
       </div>
       <div className="mt-4 space-y-2">
         <div className="rounded-lg bg-card-muted px-3 py-2 text-sm">
-          Varalakshmi Vratham · 13 Aug
+          {todayData.festivals[0] ?? "Festival"} · {formatShortDate(todayData.date)}
         </div>
         <div className="rounded-lg bg-card-muted px-3 py-2 text-sm">
-          Shukla Saptami · 13 Aug
+          {todayData.tithi} · {formatShortDate(todayData.date)}
         </div>
         <div className="rounded-lg bg-card-muted px-3 py-2 text-sm text-muted">
-          {tomorrowPreview.tithi} · 14 Aug
+          {tomorrowData.tithi} · {formatShortDate(tomorrowData.date)}
         </div>
       </div>
     </div>
   );
 }
 
-export function ProductExperience() {
+export function ProductExperience({
+  todayData,
+  tomorrowData,
+}: {
+  todayData: PanchangamDay;
+  tomorrowData: PanchangamDay;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -131,7 +157,11 @@ export function ProductExperience() {
                   <h3 className="text-lg font-semibold">{view.title}</h3>
                   <p className="mt-1 text-sm text-muted">{view.description}</p>
                   <div className="mt-6 flex flex-1 items-center justify-center">
-                    <MockPanel type={view.content} />
+                    <MockPanel
+                      type={view.content}
+                      todayData={todayData}
+                      tomorrowData={tomorrowData}
+                    />
                   </div>
                 </div>
               </motion.div>

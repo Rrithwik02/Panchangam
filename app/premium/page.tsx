@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { premiumFeatures } from "@/lib/mock-panchangam";
+import { premiumFeatures } from "@/lib/landing-content";
 import { Check } from "lucide-react";
 import type { Metadata } from "next";
 

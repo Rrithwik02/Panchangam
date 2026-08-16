@@ -3,9 +3,9 @@
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
 import { CelestialScene } from "@/components/celestial/CelestialScene";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 
-export function DailyHabitSection() {
+export function DailyHabitSection({ data }: { data: PanchangamDay }) {
   return (
     <section
       className="relative overflow-hidden border-y border-border bg-card-muted px-4 py-20 sm:px-6 lg:px-8"
@@ -28,7 +28,7 @@ export function DailyHabitSection() {
 
         <ScrollReveal delay={0.12}>
           <div className="rounded-2xl border border-border bg-dark p-1 shadow-xl">
-            <PanchangamCard data={todaysPanchangam} variant="compact" />
+            <PanchangamCard data={data} variant="compact" />
           </div>
         </ScrollReveal>
       </div>

@@ -47,6 +47,7 @@ export interface LocationParameters {
 export interface PanchangamApiMeta {
   location: LocationParameters;
   calculation_source: "dynamic" | "precomputed" | "reference";
+  data_source?: "supabase" | "reference";
 }
 
 export interface PanchangamApiSuccessResponse {

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { SunMoonTimingsBar } from "@/components/celestial/SunMoonTimingsBar";
 import { LocationAwarePanchangam } from "@/components/panchangam/LocationAwarePanchangam";
 import { Button } from "@/components/ui/button";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
+import { getBrowserTimezone } from "@/lib/location";
+import { getPanchangamByDate } from "@/lib/services/panchangam-service";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,7 +12,15 @@ export const metadata: Metadata = {
     "View today's complete Panchangam including Tithi, Nakshatra, timings, and festivals.",
 };
 
-export default function TodayPage() {
+export default async function TodayPage() {
+  const timezone = getBrowserTimezone();
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayResult = await getPanchangamByDate(todayDate, {
+    latitude: null,
+    longitude: null,
+    timezone,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background/80 backdrop-blur-md">
@@ -29,17 +38,17 @@ export default function TodayPage() {
           Today&apos;s Panchangam
         </h1>
         <p className="mt-2 text-muted">
-          Complete Panchangam for {todaysPanchangam.dateLabel}
+          Complete Panchangam for {todayResult.day.dateLabel}
         </p>
 
         <div className="mt-8">
           <div className="-mx-4 sm:mx-0">
-            <SunMoonTimingsBar />
+            <SunMoonTimingsBar data={todayResult.day} />
           </div>
         </div>
 
         <div className="mt-10">
-          <LocationAwarePanchangam data={todaysPanchangam} />
+          <LocationAwarePanchangam data={todayResult.day} />
         </div>
       </main>
     </div>

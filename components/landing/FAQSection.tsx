@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { faqItems } from "@/lib/mock-panchangam";
+import { faqItems } from "@/lib/landing-content";
 
 export function FAQSection() {
   return (

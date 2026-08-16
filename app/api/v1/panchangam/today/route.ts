@@ -1,8 +1,5 @@
-import {
-  REFERENCE_DAY,
-  buildDayResponse,
-  normalizeLocation,
-} from "@/lib/api/panchangam";
+import { normalizeLocation } from "@/lib/api/panchangam";
+import { getPanchangamDateResponse } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -16,5 +13,6 @@ export async function GET(request: Request) {
     return locationResult.error;
   }
 
-  return Response.json(buildDayResponse(REFERENCE_DAY, locationResult.location));
+  const todayDate = new Date().toISOString().slice(0, 10);
+  return getPanchangamDateResponse(todayDate, locationResult.location);
 }

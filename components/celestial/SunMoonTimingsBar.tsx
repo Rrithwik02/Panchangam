@@ -3,11 +3,10 @@
 import { Moon, Sun, Sunrise, Sunset } from "lucide-react";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { useTimeOfDayOptional } from "@/components/celestial/TimeOfDayProvider";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 
-export function SunMoonTimingsBar() {
+export function SunMoonTimingsBar({ data }: { data: PanchangamDay }) {
   const timeOfDay = useTimeOfDayOptional();
-  const data = todaysPanchangam;
   const phase = timeOfDay?.info.phase ?? "day";
   const currentTime = timeOfDay?.currentTime ?? "--:--";
   const moonPhase = timeOfDay?.moonPhase;

@@ -7,12 +7,16 @@ import gsap from "gsap";
 import { CelestialScene } from "@/components/celestial/CelestialScene";
 import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
 import { Button } from "@/components/ui/button";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
 import { useReducedMotion } from "@/lib/motion";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 
 gsap.registerPlugin(useGSAP);
 
-export function HeroSection() {
+interface HeroSectionProps {
+  data: PanchangamDay;
+}
+
+export function HeroSection({ data }: HeroSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
 
@@ -82,7 +86,7 @@ export function HeroSection() {
         </div>
 
         <div data-hero="card" className="flex justify-center lg:justify-end">
-          <PanchangamCard data={todaysPanchangam} variant="hero" />
+          <PanchangamCard data={data} variant="hero" />
         </div>
       </div>
     </section>

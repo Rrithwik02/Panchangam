@@ -11,8 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { dateAccessItems, premiumBenefits, tomorrowPreview } from "@/lib/mock-panchangam";
-import type { DateAccessItem } from "@/lib/types/panchangam";
+import { premiumBenefits } from "@/lib/landing-content";
+import type { DateAccessItem, PanchangamDay } from "@/lib/types/panchangam";
 import { Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,41 @@ export function PremiumPaywallModal({
   );
 }
 
-export function DateAccessDemo() {
+function createDateAccessItems(today: PanchangamDay, tomorrow: PanchangamDay) {
+  const baseDate = new Date(`${today.date}T00:00:00Z`);
+  const offsetDate = (offset: number) => {
+    const date = new Date(baseDate);
+    date.setUTCDate(date.getUTCDate() + offset);
+    return date.toISOString().slice(0, 10);
+  };
+  const formatShortDate = (date: string) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "short",
+    }).format(new Date(`${date}T00:00:00Z`));
+
+  return [
+    { label: "Today", date: today.date, access: "full" as const },
+    { label: "Yesterday", date: offsetDate(-1), access: "full" as const },
+    {
+      label: "Tomorrow",
+      date: tomorrow.date,
+      access: "preview" as const,
+      previewFields: ["Tithi", "Vara", "Nakshatra"],
+    },
+    { label: formatShortDate(offsetDate(1)), date: offsetDate(1), access: "locked" as const },
+    { label: formatShortDate(offsetDate(2)), date: offsetDate(2), access: "locked" as const },
+    { label: formatShortDate(offsetDate(3)), date: offsetDate(3), access: "locked" as const },
+  ];
+}
+
+export function DateAccessDemo({
+  todayData,
+  tomorrowData,
+}: {
+  todayData: PanchangamDay;
+  tomorrowData: PanchangamDay;
+}) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const handleRowClick = (item: DateAccessItem) => {
@@ -86,7 +120,7 @@ export function DateAccessDemo() {
 
         <AnimatedSection delay={0.15}>
           <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card">
-            {dateAccessItems.map((item) => (
+            {createDateAccessItems(todayData, tomorrowData).map((item) => (
               <button
                 key={`${item.label}-${item.date}`}
                 type="button"
@@ -103,8 +137,8 @@ export function DateAccessDemo() {
                   <p className="font-medium">{item.label}</p>
                   {item.access === "preview" && (
                     <p className="mt-0.5 text-xs text-muted">
-                      {tomorrowPreview.tithi} · {tomorrowPreview.vara} ·{" "}
-                      {tomorrowPreview.nakshatra}
+                      {tomorrowData.tithi} · {tomorrowData.vara} ·{" "}
+                      {tomorrowData.nakshatra}
                     </p>
                   )}
                   {item.access === "full" && (

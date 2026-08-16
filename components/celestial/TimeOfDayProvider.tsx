@@ -8,13 +8,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { todaysPanchangam } from "@/lib/mock-panchangam";
 import { getMoonPhaseFromTithi, type MoonPhaseInfo } from "@/lib/moon-phase";
+import { REFERENCE_DAY } from "@/lib/api/panchangam";
 import {
   type DayPhaseInfo,
   formatCurrentTime,
   getDayPhaseInfo,
 } from "@/lib/time-of-day";
+import type { PanchangamDay } from "@/lib/types/panchangam";
 
 interface TimeOfDayContextValue {
   info: DayPhaseInfo;
@@ -27,7 +28,19 @@ interface TimeOfDayContextValue {
 const TimeOfDayContext = createContext<TimeOfDayContextValue | null>(null);
 
 export function TimeOfDayProvider({ children }: { children: React.ReactNode }) {
-  const { sunrise, sunset, moonrise, moonset, tithi, paksha } = todaysPanchangam;
+  return (
+    <TimeOfDayProviderBase data={REFERENCE_DAY}>{children}</TimeOfDayProviderBase>
+  );
+}
+
+export function TimeOfDayProviderBase({
+  children,
+  data,
+}: {
+  children: React.ReactNode;
+  data: PanchangamDay;
+}) {
+  const { sunrise, sunset, moonrise, moonset, tithi, paksha } = data;
 
   const moonPhase = useMemo(
     () => getMoonPhaseFromTithi(tithi, paksha),
