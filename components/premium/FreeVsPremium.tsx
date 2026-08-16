@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { Button } from "@/components/ui/button";
-import { freeFeatures, premiumFeatures } from "@/lib/mock-panchangam";
+import { freeFeatures, premiumFeatures } from "@/lib/landing-content";
 import { Check } from "lucide-react";
 
 export function FreeVsPremium() {

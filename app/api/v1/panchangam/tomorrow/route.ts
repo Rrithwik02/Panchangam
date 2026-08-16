@@ -1,11 +1,5 @@
-import {
-  buildDayResponse,
-  createErrorResponse,
-  findDayByDate,
-  getTomorrowDate,
-  normalizeLocation,
-  REFERENCE_DAY,
-} from "@/lib/api/panchangam";
+import { normalizeLocation } from "@/lib/api/panchangam";
+import { getPanchangamDateResponse } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,16 +13,6 @@ export async function GET(request: Request) {
     return locationResult.error;
   }
 
-  const tomorrowDate = getTomorrowDate(REFERENCE_DAY.date);
-  const tomorrow = tomorrowDate ? findDayByDate(tomorrowDate) : null;
-
-  if (!tomorrow) {
-    return createErrorResponse(
-      "DATA_NOT_FOUND",
-      "Panchangam data is not available for tomorrow.",
-      404
-    );
-  }
-
-  return Response.json(buildDayResponse(tomorrow, locationResult.location));
+  const tomorrowDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  return getPanchangamDateResponse(tomorrowDate, locationResult.location);
 }

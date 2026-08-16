@@ -1,9 +1,5 @@
-import {
-  buildListResponse,
-  mapCalendarDay,
-  normalizeLocation,
-  REFERENCE_DAY,
-} from "@/lib/api/panchangam";
+import { normalizeLocation } from "@/lib/api/panchangam";
+import { getCalendarDateResponse } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -17,7 +13,5 @@ export async function GET(request: Request) {
     return locationResult.error;
   }
 
-  return Response.json(
-    buildListResponse([mapCalendarDay(REFERENCE_DAY)], locationResult.location)
-  );
+  return getCalendarDateResponse(locationResult.location);
 }

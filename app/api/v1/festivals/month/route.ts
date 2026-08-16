@@ -1,10 +1,5 @@
-import {
-  buildListResponse,
-  createErrorResponse,
-  filterDaysByMonth,
-  mapFestivalDay,
-  normalizeLocation,
-} from "@/lib/api/panchangam";
+import { normalizeLocation } from "@/lib/api/panchangam";
+import { getFestivalMonthResponse } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -22,22 +17,18 @@ export async function GET(request: Request) {
   const month = Number(url.searchParams.get("month"));
 
   if (!Number.isInteger(year) || year < 1) {
-    return createErrorResponse("INVALID_YEAR", "A valid year is required.");
-  }
-
-  if (!Number.isInteger(month) || month < 1 || month > 12) {
-    return createErrorResponse("INVALID_MONTH", "A valid month is required.");
-  }
-
-  const days = filterDaysByMonth(year, month).map(mapFestivalDay);
-  if (days.length === 0) {
-    return createErrorResponse(
-      "DATA_NOT_FOUND",
-      "Festival data is not available for the requested month.",
-      404
+    return Response.json(
+      { success: false, error: { code: "INVALID_YEAR", message: "A valid year is required." } },
+      { status: 400 }
     );
   }
 
-  return Response.json(buildListResponse(days, locationResult.location, { year, month }));
-}
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    return Response.json(
+      { success: false, error: { code: "INVALID_MONTH", message: "A valid month is required." } },
+      { status: 400 }
+    );
+  }
 
+  return getFestivalMonthResponse(year, month, locationResult.location);
+}

@@ -1,10 +1,5 @@
-import {
-  buildListResponse,
-  createErrorResponse,
-  mapCalendarDay,
-  normalizeLocation,
-  REFERENCE_DAY,
-} from "@/lib/api/panchangam";
+import { normalizeLocation } from "@/lib/api/panchangam";
+import { getCalendarYearResponse } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -20,19 +15,11 @@ export async function GET(request: Request) {
 
   const year = Number(url.searchParams.get("year"));
   if (!Number.isInteger(year) || year < 1) {
-    return createErrorResponse("INVALID_YEAR", "A valid year is required.");
-  }
-
-  if (new Date(REFERENCE_DAY.date).getUTCFullYear() !== year) {
-    return createErrorResponse(
-      "DATA_NOT_FOUND",
-      "Calendar data is not available for the requested year.",
-      404
+    return Response.json(
+      { success: false, error: { code: "INVALID_YEAR", message: "A valid year is required." } },
+      { status: 400 }
     );
   }
 
-  return Response.json(
-    buildListResponse([mapCalendarDay(REFERENCE_DAY)], locationResult.location, { year })
-  );
+  return getCalendarYearResponse(year, locationResult.location);
 }
-
