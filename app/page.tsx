@@ -1,4 +1,4 @@
-import { UnifiedPanchangamApp } from "@/components/panchangam/UnifiedPanchangamApp";
+import { SingleLandingPage } from "@/components/landing/SingleLandingPage";
 import { getBrowserTimezone } from "@/lib/location";
 import { getPanchangamByDate } from "@/lib/services/panchangam-service";
 
@@ -10,7 +10,7 @@ export default async function Home() {
   const todayResult = await getPanchangamByDate(todayDate, location);
 
   return (
-    <UnifiedPanchangamApp
+    <SingleLandingPage
       initialDay={todayResult.day}
       initialLocation={location}
     />

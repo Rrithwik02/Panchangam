@@ -42,13 +42,23 @@ export function formatCoordinate(value: number) {
   return value.toFixed(4);
 }
 
-export function formatLocationLabel(location: LocationParameters) {
-  const coordinates =
-    location.latitude !== null && location.longitude !== null
-      ? `${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}`
-      : "Timezone only";
+/** Formats location nicely without raw lat/long coordinates */
+export function formatLocationCity(location: LocationParameters) {
+  if (location.timezone === "Asia/Kolkata") {
+    return "Hyderabad";
+  }
 
-  return `${coordinates} · ${location.timezone}`;
+  const parts = location.timezone.split("/");
+  if (parts.length >= 2) {
+    return parts[parts.length - 1].replace(/_/g, " ");
+  }
+
+  return "Your location";
+}
+
+export function formatLocationLabel(location: LocationParameters) {
+  const city = formatLocationCity(location);
+  return `Panchangam for ${city} · Local time · ${location.timezone}`;
 }
 
 export function parseStrictDate(date: string | null) {

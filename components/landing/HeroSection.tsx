@@ -1,92 +1,60 @@
 "use client";
 
-import Link from "next/link";
-import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { CelestialScene } from "@/components/celestial/CelestialScene";
-import { PanchangamCard } from "@/components/panchangam/PanchangamCard";
-import { Button } from "@/components/ui/button";
-import { useReducedMotion } from "@/lib/motion";
-import type { PanchangamDay } from "@/lib/types/panchangam";
-
-gsap.registerPlugin(useGSAP);
+import { MapPin, ArrowDown } from "lucide-react";
+import { CelestialHeroCanvas } from "@/components/celestial/CelestialHeroCanvas";
+import { formatLocationCity } from "@/lib/location";
+import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 
 interface HeroSectionProps {
   data: PanchangamDay;
+  location?: LocationParameters;
 }
 
-export function HeroSection({ data }: HeroSectionProps) {
-  const sectionRef = useRef<HTMLElement>(null);
-  const reduced = useReducedMotion();
-
-  useGSAP(
-    () => {
-      if (reduced) return;
-
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
-      tl.from("[data-hero='eyebrow']", { opacity: 0, y: 16, duration: 0.5 })
-        .from("[data-hero='title']", { opacity: 0, y: 28, duration: 0.65 }, "-=0.25")
-        .from("[data-hero='subtitle']", { opacity: 0, y: 20, duration: 0.55 }, "-=0.35")
-        .from("[data-hero='copy']", { opacity: 0, y: 16, duration: 0.5 }, "-=0.3")
-        .from("[data-hero='cta']", { opacity: 0, y: 16, duration: 0.5 }, "-=0.25")
-        .from(
-          "[data-hero='card']",
-          { opacity: 0, y: 40, scale: 0.96, duration: 0.8 },
-          "-=0.45"
-        );
-    },
-    { scope: sectionRef, dependencies: [reduced] }
-  );
+export function HeroSection({ data, location }: HeroSectionProps) {
+  const loc = location || { latitude: null, longitude: null, timezone: "Asia/Kolkata" };
+  const city = formatLocationCity(loc);
 
   return (
-    <section
-      ref={sectionRef}
-      className="hero-gradient relative overflow-hidden px-4 pb-20 pt-12 sm:px-6 lg:px-8 lg:pb-28 lg:pt-20"
-    >
-      <CelestialScene />
+    <section className="relative min-h-[460px] sm:min-h-[520px] flex flex-col justify-center items-center overflow-hidden px-4 py-16 sm:px-6 lg:px-8 text-center border-b border-border/60">
+      {/* Three.js Celestial Scene (Realistic Sun & Dynamic Moon Phase) */}
+      <CelestialHeroCanvas />
 
-      <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div>
-          <p
-            data-hero="eyebrow"
-            className="text-sm font-medium uppercase tracking-wider text-accent"
-          >
-            Know today. Plan ahead.
-          </p>
-          <h1
-            data-hero="title"
-            className="text-hero mt-4 font-semibold tracking-tight"
-          >
-            Today&apos;s Panchangam, beautifully simplified.
-          </h1>
-          <p
-            data-hero="subtitle"
-            className="text-subheading mt-6 max-w-xl text-muted"
-          >
-            Everything you need to know about today, in one clear and peaceful
-            experience.
-          </p>
-          <p data-hero="copy" className="mt-4 max-w-xl text-muted">
-            Check today&apos;s Tithi, Nakshatra, timings, festivals, and more.
-            Need another date? Premium lets you explore beyond today.
-          </p>
-          <div
-            data-hero="cta"
-            className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
-          >
-            <Button asChild size="lg">
-              <Link href="/today">View Today&apos;s Panchangam</Link>
-            </Button>
-            <Button asChild variant="secondary" size="lg">
-              <Link href="#premium">Explore Premium</Link>
-            </Button>
-          </div>
+      {/* Backdrop Gradient Overlay for High Contrast Text Readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/75 to-background z-[1] pointer-events-none" />
+
+      {/* Hero Foreground Content */}
+      <div className="relative z-10 max-w-2xl space-y-5">
+        {/* Location & Date Badge */}
+        <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/80 bg-card/85 px-4 py-1.5 text-xs text-muted backdrop-blur-md shadow-xs">
+          <MapPin className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden="true" />
+          <span>
+            Panchangam for <strong className="font-semibold text-foreground">{city}</strong>
+          </span>
+          <span className="text-border">·</span>
+          <span>Local time · {loc.timezone}</span>
+          <span className="text-border">·</span>
+          <span className="font-semibold text-foreground">{data.dateLabel}</span>
         </div>
 
-        <div data-hero="card" className="flex justify-center lg:justify-end">
-          <PanchangamCard data={data} variant="hero" />
+        {/* Hero Title */}
+        <h1 className="text-4xl sm:text-6xl font-serif-title font-bold tracking-tight text-foreground leading-tight">
+          Panchangam
+        </h1>
+
+        {/* Short Description */}
+        <p className="text-sm sm:text-lg text-muted font-normal max-w-xl mx-auto leading-relaxed">
+          Daily astronomical calendar & celestial timings. Explore Tithi, Nakshatra, solar trajectory, and auspicious periods.
+        </p>
+
+        {/* Single Clear Primary CTA */}
+        <div className="pt-2">
+          <a
+            href="#todays-panchangam"
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition-all hover:bg-accent-hover hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>View Today&apos;s Panchangam</span>
+            <ArrowDown className="h-4 w-4" />
+          </a>
         </div>
       </div>
     </section>
