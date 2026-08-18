@@ -1,32 +1,33 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useTimeOfDayOptional } from "./TimeOfDayProvider";
 
 export function CelestialHeroCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const timeOfDay = useTimeOfDayOptional();
+  const [hasWebGL, setHasWebGL] = useState(true);
 
+  const timeOfDay = useTimeOfDayOptional();
   const info = timeOfDay?.info;
+  const moonPhase = timeOfDay?.moonPhase;
+
   const sunProgress = info?.sun.progress ?? 0.4;
-  const moonProgress = info?.moon.progress ?? 0.8;
+  const moonProgress = info?.moon.progress ?? 0.75;
   const isNight = info?.phase === "night" || info?.phase === "dusk";
-  const sunVisible = info?.sun.visible ?? true;
-  const moonVisible = info?.moon.visible ?? true;
+
+  // Real Moon Phase Illumination and Waxing state from API
+  const illumination = moonPhase?.illumination ?? 0.65;
+  const isWaxing = moonPhase?.isWaxing ?? true;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || 500;
+    const height = container.clientHeight || 450;
 
-    // Three.js Scene Setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 15);
-
+    // Check WebGL availability
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
@@ -35,136 +36,204 @@ export function CelestialHeroCanvas() {
         powerPreference: "high-performance",
       });
     } catch {
+      setHasWebGL(false);
       return;
     }
 
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // Ambient and Point Lights
+    // Three.js Scene & Camera Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 14);
+
+    const sceneGroup = new THREE.Group();
+    scene.add(sceneGroup);
+
+    // Ambient Light
     const ambientLight = new THREE.AmbientLight(
       isNight ? 0x1e293b : 0xfffbeb,
-      isNight ? 0.7 : 1.4
+      isNight ? 0.35 : 0.85
     );
     scene.add(ambientLight);
 
-    const sunLight = new THREE.PointLight(0xfbbf24, isNight ? 0.3 : 2.8, 40);
-    scene.add(sunLight);
-
-    // Subtle Stars Background (for night/dusk)
-    const starCount = 180;
-    const starGeometry = new THREE.BufferGeometry();
-    const starPositions = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount * 3; i += 3) {
-      starPositions[i] = (Math.random() - 0.5) * 35;
-      starPositions[i + 1] = Math.random() * 14 - 2;
-      starPositions[i + 2] = (Math.random() - 0.5) * 15 - 5;
-    }
-    starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xf8fafc,
-      size: 0.12,
-      transparent: true,
-      opacity: isNight ? 0.6 : 0.05,
-    });
-    const starPoints = new THREE.Points(starGeometry, starMaterial);
-    scene.add(starPoints);
-
-    // Semi-Circular Celestial Arc (Left to Right)
-    const radius = 9.0;
-    const curvePoints: THREE.Vector3[] = [];
-    const segments = 64;
-    for (let i = 0; i <= segments; i++) {
-      const theta = (i / segments) * Math.PI; // 0 (left) to PI (right)
-      const x = -radius * Math.cos(theta); // -9 (left rise) to +9 (right set)
-      const y = radius * Math.sin(theta) - 3.2; // Arc peak in upper center
-      const z = -Math.sin(theta) * 2.0; // Subtle Z depth
-      curvePoints.push(new THREE.Vector3(x, y, z));
-    }
-
-    const arcGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
-    const arcMaterial = new THREE.LineBasicMaterial({
-      color: isNight ? 0x475569 : 0xd97706,
-      transparent: true,
-      opacity: isNight ? 0.25 : 0.35,
-    });
-    const arcLine = new THREE.Line(arcGeometry, arcMaterial);
-    scene.add(arcLine);
-
-    // Sun Sphere
-    const sunGeo = new THREE.SphereGeometry(0.75, 32, 32);
+    // --- REALISTIC SUN ---
+    const sunRadius = 0.85;
+    const sunGeo = new THREE.SphereGeometry(sunRadius, 64, 64);
+    
+    // Custom Procedural Solar Surface Material
     const sunMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      emissive: 0xd97706,
-      emissiveIntensity: 0.9,
-      roughness: 0.1,
+      color: 0xfff7ed,
+      emissive: 0xf59e0b,
+      emissiveIntensity: isNight ? 0.4 : 1.2,
+      roughness: 0.2,
     });
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
 
-    // Sun Halo
-    const haloGeo = new THREE.SphereGeometry(1.25, 32, 32);
-    const haloMat = new THREE.MeshBasicMaterial({
+    // Soft Solar Corona Glow Halo
+    const coronaGeo = new THREE.SphereGeometry(sunRadius * 1.4, 32, 32);
+    const coronaMat = new THREE.MeshBasicMaterial({
       color: 0xfde047,
       transparent: true,
-      opacity: isNight ? 0.08 : 0.22,
+      opacity: isNight ? 0.08 : 0.25,
+      side: THREE.BackSide,
     });
-    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
-    sunMesh.add(haloMesh);
-    scene.add(sunMesh);
+    const coronaMesh = new THREE.Mesh(coronaGeo, coronaMat);
+    sunMesh.add(coronaMesh);
 
-    // Moon Sphere
-    const moonGeo = new THREE.SphereGeometry(0.55, 32, 32);
+    // Sun Point Light
+    const sunLight = new THREE.PointLight(0xfef08a, isNight ? 0.4 : 3.0, 50);
+    sunMesh.add(sunLight);
+    sceneGroup.add(sunMesh);
+
+    // --- REALISTIC MOON & DYNAMIC MOON PHASE ---
+    const moonRadius = 0.65;
+    const moonGeo = new THREE.SphereGeometry(moonRadius, 64, 64);
+
+    // Realistic Lunar Surface with Bump/Terrain feel
     const moonMat = new THREE.MeshStandardMaterial({
       color: 0xe2e8f0,
-      emissive: 0x94a3b8,
-      emissiveIntensity: isNight ? 0.7 : 0.15,
-      roughness: 0.5,
+      roughness: 0.8,
+      metalness: 0.1,
     });
     const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-    scene.add(moonMesh);
+    moonMesh.castShadow = true;
+    moonMesh.receiveShadow = true;
 
-    // Helper: Position body along arc from left (rise) to right (set)
-    const setPositionOnArc = (mesh: THREE.Mesh, prog: number, visible: boolean) => {
-      const p = Math.max(0, Math.min(1, prog));
+    // Dedicated Directional Light for Moon Phase (Positioned according to illumination & waxing)
+    // Angle ranges: Waxing (0 to PI), Waning (PI to 2*PI)
+    const phaseAngle = (isWaxing ? illumination : 2 - illumination) * Math.PI;
+    const moonLight = new THREE.DirectionalLight(0xffffff, isNight ? 2.5 : 1.8);
+    
+    // Position light source relative to Moon to illuminate exact crescent/quarter/gibbous phase
+    const lightDist = 10;
+    moonLight.position.set(
+      Math.sin(phaseAngle) * lightDist,
+      0.5 * lightDist,
+      Math.cos(phaseAngle) * lightDist
+    );
+    scene.add(moonLight);
+    sceneGroup.add(moonMesh);
+
+    // --- CELESTIAL ARC PATH & STARS ---
+    const arcRadius = 9.5;
+    const arcPoints: THREE.Vector3[] = [];
+    for (let i = 0; i <= 64; i++) {
+      const theta = (i / 64) * Math.PI; // 0 (left rise) to PI (right set)
+      const x = -arcRadius * Math.cos(theta);
+      const y = arcRadius * Math.sin(theta) - 3.8;
+      const z = -Math.sin(theta) * 2.2;
+      arcPoints.push(new THREE.Vector3(x, y, z));
+    }
+    const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPoints);
+    const arcMat = new THREE.LineBasicMaterial({
+      color: isNight ? 0x334155 : 0xd97706,
+      transparent: true,
+      opacity: isNight ? 0.25 : 0.35,
+    });
+    const arcLine = new THREE.Line(arcGeo, arcMat);
+    sceneGroup.add(arcLine);
+
+    // Static Background Stars
+    const starCount = 150;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      starPos[i] = (Math.random() - 0.5) * 40;
+      starPos[i + 1] = Math.random() * 16 - 2;
+      starPos[i + 2] = (Math.random() - 0.5) * 20 - 5;
+    }
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xf8fafc,
+      size: 0.1,
+      transparent: true,
+      opacity: isNight ? 0.55 : 0.05,
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // Update Celestial Body Positions on Arc
+    const updateArcPosition = (mesh: THREE.Mesh, progress: number, visible: boolean) => {
+      const p = Math.max(0, Math.min(1, progress));
       const theta = p * Math.PI;
-      const x = -radius * Math.cos(theta);
-      const y = radius * Math.sin(theta) - 3.2;
-      const z = -Math.sin(theta) * 2.0;
-
+      const x = -arcRadius * Math.cos(theta);
+      const y = arcRadius * Math.sin(theta) - 3.8;
+      const z = -Math.sin(theta) * 2.2;
       mesh.position.set(x, y, z);
       mesh.visible = visible;
     };
 
-    setPositionOnArc(sunMesh, sunProgress, sunVisible);
-    sunLight.position.copy(sunMesh.position);
-    setPositionOnArc(moonMesh, moonProgress, moonVisible);
+    updateArcPosition(sunMesh, sunProgress, info?.sun.visible ?? true);
+    updateArcPosition(moonMesh, moonProgress, info?.moon.visible ?? true);
 
-    // Gentle Animation Loop
-    let animId: number;
-    let mouseX = 0;
-    let mouseY = 0;
+    // --- INTERACTIVE POINTER DRAG & PARALLAX ---
+    let targetRotX = 0;
+    let targetRotY = 0;
+    let isDragging = false;
+    let previousMouseX = 0;
+    let previousMouseY = 0;
 
-    const handleMouse = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      mouseX = ((e.clientX - rect.left) / rect.width - 0.5) * 0.3;
-      mouseY = ((e.clientY - rect.top) / rect.height - 0.5) * 0.3;
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      isDragging = true;
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      previousMouseX = clientX;
+      previousMouseY = clientY;
     };
 
-    window.addEventListener("mousemove", handleMouse, { passive: true });
+    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
+      if (isDragging) {
+        const deltaX = clientX - previousMouseX;
+        const deltaY = clientY - previousMouseY;
+        targetRotY += deltaX * 0.003;
+        targetRotX += deltaY * 0.003;
+        previousMouseX = clientX;
+        previousMouseY = clientY;
+      } else {
+        // Subtle hover tilt
+        const rect = container.getBoundingClientRect();
+        targetRotY = ((clientX - rect.left) / rect.width - 0.5) * 0.25;
+        targetRotX = ((clientY - rect.top) / rect.height - 0.5) * 0.2;
+      }
+    };
+
+    const handlePointerUp = () => {
+      isDragging = false;
+    };
+
+    container.addEventListener("mousedown", handlePointerDown);
+    container.addEventListener("mousemove", handlePointerMove);
+    window.addEventListener("mouseup", handlePointerUp);
+    container.addEventListener("touchstart", handlePointerDown, { passive: true });
+    container.addEventListener("touchmove", handlePointerMove, { passive: true });
+    window.addEventListener("touchend", handlePointerUp);
+
+    // Animation Render Loop
+    let animId: number;
     const clock = new THREE.Clock();
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime();
 
-      // Gentle pulsing of Sun halo
-      haloMesh.scale.setScalar(1 + Math.sin(elapsedTime * 1.2) * 0.05);
+      // Very slow natural rotation of Sun & Moon
+      sunMesh.rotation.y = elapsedTime * 0.05;
+      moonMesh.rotation.y = elapsedTime * 0.02;
 
-      // Subtle parallax camera motion
-      camera.position.x += (mouseX - camera.position.x) * 0.03;
-      camera.position.y += (-mouseY - camera.position.y) * 0.03;
-      camera.lookAt(0, 0, 0);
+      // Smooth Lerp Dampening for Pointer Drag & Parallax
+      sceneGroup.rotation.y += (targetRotY - sceneGroup.rotation.y) * 0.05;
+      sceneGroup.rotation.x += (targetRotX - sceneGroup.rotation.x) * 0.05;
+
+      // Clamp rotation angles so scene doesn't flip upside down
+      sceneGroup.rotation.x = Math.max(-0.35, Math.min(0.35, sceneGroup.rotation.x));
+      sceneGroup.rotation.y = Math.max(-0.6, Math.min(0.6, sceneGroup.rotation.y));
 
       renderer.render(scene, camera);
       animId = requestAnimationFrame(animate);
@@ -184,8 +253,14 @@ export function CelestialHeroCanvas() {
     window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouse);
+      container.removeEventListener("mousedown", handlePointerDown);
+      container.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("mouseup", handlePointerUp);
+      container.removeEventListener("touchstart", handlePointerDown);
+      container.removeEventListener("touchmove", handlePointerMove);
+      window.removeEventListener("touchend", handlePointerUp);
       window.removeEventListener("resize", handleResize);
+
       cancelAnimationFrame(animId);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -193,22 +268,28 @@ export function CelestialHeroCanvas() {
       renderer.dispose();
       sunGeo.dispose();
       sunMat.dispose();
-      haloGeo.dispose();
-      haloMat.dispose();
+      coronaGeo.dispose();
+      coronaMat.dispose();
       moonGeo.dispose();
       moonMat.dispose();
-      starGeometry.dispose();
-      starMaterial.dispose();
-      arcGeometry.dispose();
-      arcMaterial.dispose();
+      starGeo.dispose();
+      starMat.dispose();
+      arcGeo.dispose();
+      arcMat.dispose();
     };
-  }, [sunProgress, moonProgress, isNight, sunVisible, moonVisible]);
+  }, [sunProgress, moonProgress, isNight, illumination, isWaxing, info?.sun.visible, info?.moon.visible]);
+
+  if (!hasWebGL) {
+    return (
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-card-muted/40 via-background to-background pointer-events-none" />
+    );
+  }
 
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
-      aria-hidden="true"
+      className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing overflow-hidden select-none"
+      aria-label="Interactive Astronomical Instrument"
     />
   );
 }

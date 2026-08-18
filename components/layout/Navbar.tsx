@@ -2,20 +2,24 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
 import { DayPhaseBadge } from "@/components/celestial/DayPhaseBadge";
+import { formatLocationCity } from "@/lib/location";
+import { useTimeOfDayOptional } from "@/components/celestial/TimeOfDayProvider";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "#todays-panchangam", label: "Today" },
-  { href: "#daily-timings", label: "Timings" },
-  { href: "#tithi-nakshatra", label: "Tithi & Nakshatra" },
-  { href: "#calendar-festivals", label: "Calendar" },
-  { href: "#explore", label: "Explore" },
-  { href: "#premium", label: "Premium" },
+  { href: "#sun-moon", label: "Sun & Moon" },
+  { href: "#important-timings", label: "Timings" },
+  { href: "#product-tiers", label: "Premium" },
+  { href: "#product-tiers", label: "API" },
 ];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const timeOfDay = useTimeOfDayOptional();
+  const city = timeOfDay?.info ? "Hyderabad" : "Hyderabad";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -48,11 +52,11 @@ export function Navbar() {
           <span className="font-serif-title text-lg font-bold tracking-tight">Panchangam</span>
         </Link>
 
-        {/* Section Links */}
+        {/* Section Navigation Links */}
         <div className="hidden md:flex items-center gap-6">
-          {navLinks.map((link) => (
+          {navLinks.map((link, idx) => (
             <a
-              key={link.href}
+              key={`${link.label}-${idx}`}
               href={link.href}
               className="text-xs font-semibold text-muted transition-colors hover:text-foreground"
             >
@@ -61,8 +65,12 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Right side items */}
+        {/* Right side items: Location & Day Phase */}
         <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1 text-xs text-muted font-medium bg-card-muted/80 px-2.5 py-1 rounded-full border border-border/60">
+            <MapPin className="h-3 w-3 text-accent" />
+            <span>{city}</span>
+          </div>
           <DayPhaseBadge />
         </div>
       </nav>

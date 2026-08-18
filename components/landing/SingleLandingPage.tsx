@@ -6,11 +6,9 @@ import { Footer } from "@/components/layout/Footer";
 import { TimeOfDayProviderBase } from "@/components/celestial/TimeOfDayProvider";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { TodayPanchangamSection } from "@/components/landing/TodayPanchangamSection";
-import { DailyTimingsSection } from "@/components/landing/DailyTimingsSection";
-import { TithiNakshatraSection } from "@/components/landing/TithiNakshatraSection";
-import { CalendarFestivalsSection } from "@/components/landing/CalendarFestivalsSection";
-import { ExploreSection } from "@/components/landing/ExploreSection";
-import { PremiumSection } from "@/components/landing/PremiumSection";
+import { SunMoonSection } from "@/components/landing/SunMoonSection";
+import { ImportantTimingsSection } from "@/components/landing/ImportantTimingsSection";
+import { ProductTiersSection } from "@/components/landing/ProductTiersSection";
 import {
   buildLocationSearchParams,
   getBrowserTimezone,
@@ -54,7 +52,7 @@ export function SingleLandingPage({
             }
           }
         } catch {
-          // Keep current reference location
+          // Fall back to initial reference location
         }
       },
       () => {},
@@ -72,24 +70,19 @@ export function SingleLandingPage({
           <HeroSection data={dayData} location={location} />
 
           {/* Section 2: Today's Panchangam */}
-          <TodayPanchangamSection data={dayData} />
+          <TodayPanchangamSection data={dayData} location={location} />
 
-          {/* Section 3: Sun & Moon / Daily Timings */}
-          <DailyTimingsSection data={dayData} />
+          {/* Section 3: Sun & Moon */}
+          <SunMoonSection data={dayData} />
 
-          {/* Section 4: Tithi & Nakshatra */}
-          <TithiNakshatraSection data={dayData} />
+          {/* Section 4: Important Timings */}
+          <ImportantTimingsSection data={dayData} />
 
-          {/* Section 5: Calendar & Festivals */}
-          <CalendarFestivalsSection initialDay={dayData} location={location} />
-
-          {/* Section 6: Explore Panchangam */}
-          <ExploreSection />
-
-          {/* Section 7: Premium */}
-          <PremiumSection />
+          {/* Section 5: Basic / Premium / API Product Tiers */}
+          <ProductTiersSection />
         </main>
 
+        {/* Section 6: Footer */}
         <Footer />
       </div>
     </TimeOfDayProviderBase>
