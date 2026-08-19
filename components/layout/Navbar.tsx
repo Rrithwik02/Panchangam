@@ -16,10 +16,14 @@ const navLinks = [
   { href: "#product-tiers", label: "API" },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  cityName?: string | null;
+}
+
+export function Navbar({ cityName }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const timeOfDay = useTimeOfDayOptional();
-  const city = timeOfDay?.info ? "Hyderabad" : "Hyderabad";
+  const city = cityName || formatLocationCity({ latitude: null, longitude: null, timezone: "Asia/Kolkata" });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

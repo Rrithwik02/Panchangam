@@ -8,15 +8,16 @@ import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 interface HeroSectionProps {
   data: PanchangamDay;
   location?: LocationParameters;
+  cityName?: string | null;
 }
 
-export function HeroSection({ data, location }: HeroSectionProps) {
+export function HeroSection({ data, location, cityName }: HeroSectionProps) {
   const loc = location || { latitude: null, longitude: null, timezone: "Asia/Kolkata" };
-  const city = formatLocationCity(loc);
+  const city = formatLocationCity(loc, cityName);
 
   return (
     <section className="relative min-h-[460px] sm:min-h-[520px] flex flex-col justify-center items-center overflow-hidden px-4 py-16 sm:px-6 lg:px-8 text-center border-b border-border/60">
-      {/* Three.js Celestial Scene (Realistic Sun & Dynamic Moon Phase) */}
+      {/* Three.js Celestial Scene (Realistic Sun, Sunset Atmosphere & Dynamic API Moon Phase) */}
       <CelestialHeroCanvas />
 
       {/* Backdrop Gradient Overlay for High Contrast Text Readability */}
@@ -24,7 +25,7 @@ export function HeroSection({ data, location }: HeroSectionProps) {
 
       {/* Hero Foreground Content */}
       <div className="relative z-10 max-w-2xl space-y-5">
-        {/* Location & Date Badge */}
+        {/* Device Location & Local Date Badge */}
         <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/80 bg-card/85 px-4 py-1.5 text-xs text-muted backdrop-blur-md shadow-xs">
           <MapPin className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden="true" />
           <span>
@@ -46,7 +47,7 @@ export function HeroSection({ data, location }: HeroSectionProps) {
           Daily astronomical calendar & celestial timings. Explore Tithi, Nakshatra, solar trajectory, and auspicious periods.
         </p>
 
-        {/* Single Clear Primary CTA */}
+        {/* Single Primary CTA */}
         <div className="pt-2">
           <a
             href="#todays-panchangam"

@@ -11,6 +11,7 @@ export type BrowserLocationStatus =
 export interface BrowserLocationState extends LocationParameters {
   status: BrowserLocationStatus;
   errorMessage?: string;
+  cityName?: string;
 }
 
 export function getBrowserTimezone(fallback = "UTC") {
@@ -42,8 +43,25 @@ export function formatCoordinate(value: number) {
   return value.toFixed(4);
 }
 
+/** Reverse geocodes latitude/longitude to a friendly city name */
+export async function fetchCityFromCoordinates(lat: number, lon: number): Promise<string | null> {
+  try {
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    const res = await fetch(url, { cache: "force-cache" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.city || data.locality || data.principalSubdivision || null;
+  } catch {
+    return null;
+  }
+}
+
 /** Formats location nicely without raw lat/long coordinates */
-export function formatLocationCity(location: LocationParameters) {
+export function formatLocationCity(location: LocationParameters, customCityName?: string | null) {
+  if (customCityName) {
+    return customCityName;
+  }
+
   if (location.timezone === "Asia/Kolkata") {
     return "Hyderabad";
   }
@@ -56,8 +74,8 @@ export function formatLocationCity(location: LocationParameters) {
   return "Your location";
 }
 
-export function formatLocationLabel(location: LocationParameters) {
-  const city = formatLocationCity(location);
+export function formatLocationLabel(location: LocationParameters, customCityName?: string | null) {
+  const city = formatLocationCity(location, customCityName);
   return `Panchangam for ${city} · Local time · ${location.timezone}`;
 }
 
