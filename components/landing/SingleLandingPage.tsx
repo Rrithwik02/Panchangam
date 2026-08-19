@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { TimeOfDayProviderBase } from "@/components/celestial/TimeOfDayProvider";
@@ -14,7 +14,13 @@ import {
   fetchCityFromCoordinates,
   getBrowserTimezone,
 } from "@/lib/location";
-import type { PanchangamDay, LocationParameters, PanchangamApiSuccessResponse } from "@/lib/types/panchangam";
+import type {
+  PanchangamDay,
+  PanchangamPreviewDay,
+  LocationParameters,
+  PanchangamApiSuccessResponse,
+  PanchangamApiPreviewResponse,
+} from "@/lib/types/panchangam";
 
 interface SingleLandingPageProps {
   initialDay: PanchangamDay;
@@ -25,10 +31,52 @@ export function SingleLandingPage({
   initialDay,
   initialLocation,
 }: SingleLandingPageProps) {
-  const [dayData, setDayData] = useState<PanchangamDay>(initialDay);
+  const [activeMode, setActiveMode] = useState<"today" | "yesterday" | "tomorrow">("today");
+  const [dayData, setDayData] = useState<PanchangamDay | PanchangamPreviewDay>(initialDay);
   const [location, setLocation] = useState<LocationParameters>(initialLocation);
   const [cityName, setCityName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Fetch relative Panchangam data from API (Today, Yesterday, Tomorrow)
+  const fetchRelativeData = useCallback(
+    async (mode: "today" | "yesterday" | "tomorrow", loc: LocationParameters) => {
+      setIsLoading(true);
+      try {
+        const query = buildLocationSearchParams({
+          date: initialDay.date,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          timezone: loc.timezone,
+        }).toString();
+
+        const endpoint = `/api/v1/panchangam/${mode}?${query}`;
+        const res = await fetch(endpoint);
+
+        if (res.ok) {
+          const payload = (await res.json()) as
+            | PanchangamApiSuccessResponse
+            | PanchangamApiPreviewResponse;
+          if (payload.success) {
+            setDayData(payload.data);
+            setLocation(payload.meta.location);
+          }
+        }
+      } catch {
+        // Keep existing payload on network failure
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [initialDay.date]
+  );
+
+  // Handle Mode Change (Yesterday | Today | Tomorrow)
+  const handleModeChange = (mode: "today" | "yesterday" | "tomorrow") => {
+    setActiveMode(mode);
+    fetchRelativeData(mode, location);
+  };
+
+  // Device Location Resolution & Initial Fetch
   useEffect(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) return;
 
@@ -39,51 +87,50 @@ export function SingleLandingPage({
         try {
           const lat = pos.coords.latitude;
           const lon = pos.coords.longitude;
+          const userLocation: LocationParameters = { latitude: lat, longitude: lon, timezone };
 
-          // Simultaneously fetch reverse geocoded city name and Panchangam API data
-          const [cityResolved, apiRes] = await Promise.all([
+          // Fetch reverse geocoded city name & Today API payload
+          const [cityResolved] = await Promise.all([
             fetchCityFromCoordinates(lat, lon),
-            fetch(
-              `/api/v1/panchangam/date?${buildLocationSearchParams({
-                date: initialDay.date,
-                latitude: lat,
-                longitude: lon,
-                timezone,
-              }).toString()}`
-            ),
+            fetchRelativeData("today", userLocation),
           ]);
 
           if (cityResolved) {
             setCityName(cityResolved);
           }
-
-          if (apiRes.ok) {
-            const payload = (await apiRes.json()) as PanchangamApiSuccessResponse;
-            if (payload.success) {
-              setDayData(payload.data);
-              setLocation(payload.meta.location);
-            }
-          }
         } catch {
-          // Fall back to initial reference location
+          // Fall back gracefully
         }
       },
       () => {},
       { timeout: 8000 }
     );
-  }, [initialDay.date]);
+  }, [fetchRelativeData]);
+
+  // Fall back to reference day for Three.js celestial provider if in preview mode
+  const providerData: PanchangamDay =
+    "access" in dayData && dayData.access === "preview"
+      ? initialDay
+      : (dayData as PanchangamDay);
 
   return (
-    <TimeOfDayProviderBase data={dayData}>
+    <TimeOfDayProviderBase data={providerData}>
       <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500">
         <Navbar cityName={cityName} />
 
         <main id="main-content" className="flex-1">
           {/* Section 1: Hero */}
-          <HeroSection data={dayData} location={location} cityName={cityName} />
+          <HeroSection data={providerData} location={location} cityName={cityName} />
 
-          {/* Section 2: Today's Panchangam */}
-          <TodayPanchangamSection data={dayData} location={location} cityName={cityName} />
+          {/* Section 2: Today's Panchangam (with Yesterday/Today/Tomorrow Switcher) */}
+          <TodayPanchangamSection
+            data={dayData}
+            location={location}
+            cityName={cityName}
+            activeMode={activeMode}
+            onModeChange={handleModeChange}
+            isLoading={isLoading}
+          />
 
           {/* Section 3: Sun & Moon */}
           <SunMoonSection data={dayData} />
