@@ -1,5 +1,5 @@
 import { normalizeLocation } from "@/lib/api/panchangam";
-import { getPanchangamDateResponse } from "@/lib/services/panchangam-service";
+import { getPanchangamYesterday } from "@/lib/services/panchangam-service";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -13,6 +13,5 @@ export async function GET(request: Request) {
     return locationResult.error;
   }
 
-  const yesterdayDate = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  return getPanchangamDateResponse(yesterdayDate, locationResult.location);
+  return getPanchangamYesterday(locationResult.location);
 }

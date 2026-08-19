@@ -9,8 +9,10 @@ import type {
   LocationParameters,
   PanchangamApiErrorResponse,
   PanchangamApiMeta,
+  PanchangamApiPreviewResponse,
   PanchangamApiSuccessResponse,
   PanchangamDay,
+  PanchangamPreviewDay,
 } from "@/lib/types/panchangam";
 
 export interface QueryLocation {
@@ -103,6 +105,73 @@ export function parseStrictDate(date: string | null) {
   return parsed;
 }
 
+export function getCurrentReferenceDate() {
+  const override = process.env.PANCHANGAM_TEST_NOW;
+  if (override) {
+    const parsed = new Date(override);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return new Date();
+}
+
+export function formatDateInTimeZone(date: Date, timezone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+export function shiftDateString(date: string, days: number) {
+  const parsed = parseStrictDate(date);
+  if (!parsed) {
+    return null;
+  }
+
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+}
+
+export function getLocalDateForTimezone(timezone: string, date = getCurrentReferenceDate()) {
+  return formatDateInTimeZone(date, timezone);
+}
+
+export function getRelativeDateForTimezone(
+  timezone: string,
+  offsetDays: number,
+  date = getCurrentReferenceDate()
+) {
+  const localDate = getLocalDateForTimezone(timezone, date);
+  return shiftDateString(localDate, offsetDays);
+}
+
+export function getTodayDateForTimezone(timezone: string, date = getCurrentReferenceDate()) {
+  return getRelativeDateForTimezone(timezone, 0, date);
+}
+
+export function getYesterdayDateForTimezone(timezone: string, date = getCurrentReferenceDate()) {
+  return getRelativeDateForTimezone(timezone, -1, date);
+}
+
+export function getTomorrowDateForTimezone(timezone: string, date = getCurrentReferenceDate()) {
+  return getRelativeDateForTimezone(timezone, 1, date);
+}
+
 export function normalizeLocation(query: QueryLocation): {
   location: LocationParameters;
   error?: Response;
@@ -188,6 +257,35 @@ export function buildDayResponse(
   };
 }
 
+export function buildPreviewDayResponse(
+  day: PanchangamDay,
+  location: LocationParameters,
+  source: PanchangamApiMeta["calculation_source"] = "precomputed"
+): PanchangamApiPreviewResponse {
+  const previewFields = ["Date", "Vara", "Paksha", "Tithi", "Nakshatra"];
+  const data: PanchangamPreviewDay = {
+    date: day.date,
+    dateLabel: day.dateLabel,
+    vara: day.vara,
+    paksha: day.paksha,
+    tithi: day.tithi,
+    nakshatra: day.nakshatra,
+    location: formatLocationLabel(location),
+    access: "preview",
+    previewFields,
+    upgradeMessage: "Full future-date access is available with Premium.",
+  };
+
+  return {
+    success: true,
+    data,
+    meta: buildMeta(location, source, {
+      access: "preview",
+      preview_fields: previewFields,
+    }),
+  };
+}
+
 export function availableDays() {
   return [REFERENCE_DAY];
 }
@@ -201,23 +299,11 @@ export function findDayByDate(date: string) {
 }
 
 export function getYesterdayDate(date: string) {
-  const parsed = parseStrictDate(date);
-  if (!parsed) {
-    return null;
-  }
-
-  parsed.setUTCDate(parsed.getUTCDate() - 1);
-  return parsed.toISOString().slice(0, 10);
+  return shiftDateString(date, -1);
 }
 
 export function getTomorrowDate(date: string) {
-  const parsed = parseStrictDate(date);
-  if (!parsed) {
-    return null;
-  }
-
-  parsed.setUTCDate(parsed.getUTCDate() + 1);
-  return parsed.toISOString().slice(0, 10);
+  return shiftDateString(date, 1);
 }
 
 export function filterDaysByRange(startDate: string, endDate: string) {

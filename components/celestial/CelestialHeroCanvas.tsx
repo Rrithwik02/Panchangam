@@ -175,7 +175,9 @@ export function CelestialHeroCanvas() {
         powerPreference: "high-performance",
       });
     } catch {
-      setHasWebGL(false);
+      window.setTimeout(() => {
+        setHasWebGL(false);
+      }, 0);
       return;
     }
 
