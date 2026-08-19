@@ -7,11 +7,12 @@ import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 interface TodayPanchangamSectionProps {
   data: PanchangamDay;
   location?: LocationParameters;
+  cityName?: string | null;
 }
 
-export function TodayPanchangamSection({ data, location }: TodayPanchangamSectionProps) {
+export function TodayPanchangamSection({ data, location, cityName }: TodayPanchangamSectionProps) {
   const loc = location || { latitude: null, longitude: null, timezone: "Asia/Kolkata" };
-  const city = formatLocationCity(loc);
+  const city = formatLocationCity(loc, cityName);
 
   return (
     <section id="todays-panchangam" className="py-16 sm:py-20 border-b border-border/60">

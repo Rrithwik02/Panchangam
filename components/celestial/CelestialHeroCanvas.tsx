@@ -4,6 +4,112 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useTimeOfDayOptional } from "./TimeOfDayProvider";
 
+/** Generates a realistic lunar surface texture with craters and maria patches */
+function createLunarTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d")!;
+
+  // Base lunar grey terrain
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillRect(0, 0, 512, 256);
+
+  // Maria (dark basaltic plains)
+  const mariaColors = ["#475569", "#334155", "#1e293b"];
+  for (let i = 0; i < 18; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 256;
+    const r = Math.random() * 45 + 15;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, mariaColors[i % mariaColors.length]);
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Craters (light rims with dark centers)
+  for (let i = 0; i < 80; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 256;
+    const r = Math.random() * 12 + 2;
+
+    // Rim
+    ctx.fillStyle = "#cbd5e1";
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Floor shadow
+    ctx.fillStyle = "#334155";
+    ctx.beginPath();
+    ctx.arc(x + r * 0.2, y + r * 0.2, r * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+/** Generates a natural radial sunbeam/ray texture (Ref Image 1 & 2) */
+function createSunbeamTexture(isSunset: boolean): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d")!;
+  const center = 256;
+
+  // Core radial glow
+  const coreGrad = ctx.createRadialGradient(center, center, 0, center, center, 240);
+  if (isSunset) {
+    coreGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    coreGrad.addColorStop(0.2, "rgba(251, 146, 60, 0.7)");
+    coreGrad.addColorStop(0.5, "rgba(234, 88, 12, 0.35)");
+    coreGrad.addColorStop(1, "rgba(124, 45, 18, 0)");
+  } else {
+    coreGrad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+    coreGrad.addColorStop(0.25, "rgba(254, 240, 138, 0.8)");
+    coreGrad.addColorStop(0.55, "rgba(245, 158, 11, 0.35)");
+    coreGrad.addColorStop(1, "rgba(217, 119, 6, 0)");
+  }
+  ctx.fillStyle = coreGrad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // 16 Bursting Radial Sunbeams (Ref Image 1)
+  const numRays = 16;
+  ctx.save();
+  ctx.translate(center, center);
+  for (let i = 0; i < numRays; i++) {
+    const angle = (i / numRays) * Math.PI * 2;
+    const rayLength = 230 + Math.random() * 20;
+    const width = 0.08 + Math.random() * 0.04;
+
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-Math.sin(width) * rayLength, rayLength);
+    ctx.lineTo(Math.sin(width) * rayLength, rayLength);
+    ctx.closePath();
+
+    const rayGrad = ctx.createLinearGradient(0, 0, 0, rayLength);
+    if (isSunset) {
+      rayGrad.addColorStop(0, "rgba(254, 215, 170, 0.45)");
+      rayGrad.addColorStop(1, "rgba(234, 88, 12, 0)");
+    } else {
+      rayGrad.addColorStop(0, "rgba(255, 255, 255, 0.55)");
+      rayGrad.addColorStop(1, "rgba(250, 204, 21, 0)");
+    }
+    ctx.fillStyle = rayGrad;
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  return new THREE.CanvasTexture(canvas);
+}
+
 export function CelestialHeroCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hasWebGL, setHasWebGL] = useState(true);
@@ -12,11 +118,13 @@ export function CelestialHeroCanvas() {
   const info = timeOfDay?.info;
   const moonPhase = timeOfDay?.moonPhase;
 
-  const sunProgress = info?.sun.progress ?? 0.4;
-  const moonProgress = info?.moon.progress ?? 0.75;
-  const isNight = info?.phase === "night" || info?.phase === "dusk";
+  const sunProgress = info?.sun.progress ?? 0.45;
+  const moonProgress = info?.moon.progress ?? 0.8;
+  const phase = info?.phase ?? "day";
+  const isNight = phase === "night";
+  const isSunsetOrSunrise = phase === "dawn" || phase === "dusk" || sunProgress < 0.18 || sunProgress > 0.82;
 
-  // Real Moon Phase Illumination and Waxing state from API
+  // Real API Moon Phase Illumination and Waxing state
   const illumination = moonPhase?.illumination ?? 0.65;
   const isWaxing = moonPhase?.isWaxing ?? true;
 
@@ -27,7 +135,6 @@ export function CelestialHeroCanvas() {
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || 450;
 
-    // Check WebGL availability
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
@@ -46,7 +153,6 @@ export function CelestialHeroCanvas() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // Three.js Scene & Camera Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     camera.position.set(0, 0, 14);
@@ -54,72 +160,77 @@ export function CelestialHeroCanvas() {
     const sceneGroup = new THREE.Group();
     scene.add(sceneGroup);
 
-    // Ambient Light
+    // Dynamic Ambient Light
     const ambientLight = new THREE.AmbientLight(
-      isNight ? 0x1e293b : 0xfffbeb,
-      isNight ? 0.35 : 0.85
+      isSunsetOrSunrise ? 0xea580c : isNight ? 0x1e293b : 0xfffbeb,
+      isSunsetOrSunrise ? 0.7 : isNight ? 0.35 : 0.95
     );
     scene.add(ambientLight);
 
-    // --- REALISTIC SUN ---
-    const sunRadius = 0.85;
+    // --- 1. REALISTIC SUN & RADIAL SUNBEAMS (Ref Image 1 & 2) ---
+    const sunRadius = 0.9;
     const sunGeo = new THREE.SphereGeometry(sunRadius, 64, 64);
     
-    // Custom Procedural Solar Surface Material
+    // Core Sun Material (Brilliant warm-white/golden core)
     const sunMat = new THREE.MeshStandardMaterial({
-      color: 0xfff7ed,
-      emissive: 0xf59e0b,
-      emissiveIntensity: isNight ? 0.4 : 1.2,
-      roughness: 0.2,
+      color: isSunsetOrSunrise ? 0xffedd5 : 0xffffff,
+      emissive: isSunsetOrSunrise ? 0xea580c : 0xf59e0b,
+      emissiveIntensity: isSunsetOrSunrise ? 1.4 : 1.1,
+      roughness: 0.1,
     });
     const sunMesh = new THREE.Mesh(sunGeo, sunMat);
 
-    // Soft Solar Corona Glow Halo
-    const coronaGeo = new THREE.SphereGeometry(sunRadius * 1.4, 32, 32);
-    const coronaMat = new THREE.MeshBasicMaterial({
-      color: 0xfde047,
+    // Natural Radial Sunbeams Sprite Billboard (Ref Image 1 & 2)
+    const sunbeamTexture = createSunbeamTexture(isSunsetOrSunrise);
+    const sunbeamMat = new THREE.SpriteMaterial({
+      map: sunbeamTexture,
       transparent: true,
-      opacity: isNight ? 0.08 : 0.25,
-      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      opacity: isNight ? 0.1 : isSunsetOrSunrise ? 0.85 : 0.75,
     });
-    const coronaMesh = new THREE.Mesh(coronaGeo, coronaMat);
-    sunMesh.add(coronaMesh);
+    const sunbeamSprite = new THREE.Sprite(sunbeamMat);
+    sunbeamSprite.scale.set(7.5, 7.5, 1);
+    sunMesh.add(sunbeamSprite);
 
     // Sun Point Light
-    const sunLight = new THREE.PointLight(0xfef08a, isNight ? 0.4 : 3.0, 50);
+    const sunLight = new THREE.PointLight(
+      isSunsetOrSunrise ? 0xf97316 : 0xfef08a,
+      isNight ? 0.3 : 3.2,
+      45
+    );
     sunMesh.add(sunLight);
     sceneGroup.add(sunMesh);
 
-    // --- REALISTIC MOON & DYNAMIC MOON PHASE ---
-    const moonRadius = 0.65;
+    // --- 2. REALISTIC MOON & DYNAMIC API PHASE SHADER (Ref Image 3) ---
+    const moonRadius = 0.7;
     const moonGeo = new THREE.SphereGeometry(moonRadius, 64, 64);
+    const lunarTexture = createLunarTexture();
 
-    // Realistic Lunar Surface with Bump/Terrain feel
     const moonMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.8,
-      metalness: 0.1,
+      map: lunarTexture,
+      bumpMap: lunarTexture,
+      bumpScale: 0.04,
+      roughness: 0.85,
+      metalness: 0.05,
     });
     const moonMesh = new THREE.Mesh(moonGeo, moonMat);
     moonMesh.castShadow = true;
     moonMesh.receiveShadow = true;
 
-    // Dedicated Directional Light for Moon Phase (Positioned according to illumination & waxing)
-    // Angle ranges: Waxing (0 to PI), Waning (PI to 2*PI)
+    // Dedicated Directional Sunlight for Dynamic Moon Phase Shadowing (Ref Image 3)
     const phaseAngle = (isWaxing ? illumination : 2 - illumination) * Math.PI;
-    const moonLight = new THREE.DirectionalLight(0xffffff, isNight ? 2.5 : 1.8);
+    const moonSunlight = new THREE.DirectionalLight(0xffffff, isNight ? 2.6 : 1.6);
     
-    // Position light source relative to Moon to illuminate exact crescent/quarter/gibbous phase
-    const lightDist = 10;
-    moonLight.position.set(
+    const lightDist = 12;
+    moonSunlight.position.set(
       Math.sin(phaseAngle) * lightDist,
-      0.5 * lightDist,
+      0.4 * lightDist,
       Math.cos(phaseAngle) * lightDist
     );
-    scene.add(moonLight);
+    scene.add(moonSunlight);
     sceneGroup.add(moonMesh);
 
-    // --- CELESTIAL ARC PATH & STARS ---
+    // --- 3. CELESTIAL ARC PATH & STARS ---
     const arcRadius = 9.5;
     const arcPoints: THREE.Vector3[] = [];
     for (let i = 0; i <= 64; i++) {
@@ -131,15 +242,15 @@ export function CelestialHeroCanvas() {
     }
     const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPoints);
     const arcMat = new THREE.LineBasicMaterial({
-      color: isNight ? 0x334155 : 0xd97706,
+      color: isSunsetOrSunrise ? 0xea580c : isNight ? 0x334155 : 0xd97706,
       transparent: true,
-      opacity: isNight ? 0.25 : 0.35,
+      opacity: isSunsetOrSunrise ? 0.45 : isNight ? 0.25 : 0.35,
     });
     const arcLine = new THREE.Line(arcGeo, arcMat);
     sceneGroup.add(arcLine);
 
     // Static Background Stars
-    const starCount = 150;
+    const starCount = 160;
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
@@ -152,12 +263,12 @@ export function CelestialHeroCanvas() {
       color: 0xf8fafc,
       size: 0.1,
       transparent: true,
-      opacity: isNight ? 0.55 : 0.05,
+      opacity: isNight ? 0.55 : isSunsetOrSunrise ? 0.2 : 0.05,
     });
     const stars = new THREE.Points(starGeo, starMat);
     scene.add(stars);
 
-    // Update Celestial Body Positions on Arc
+    // Update Celestial Arc Positions
     const updateArcPosition = (mesh: THREE.Mesh, progress: number, visible: boolean) => {
       const p = Math.max(0, Math.min(1, progress));
       const theta = p * Math.PI;
@@ -171,7 +282,7 @@ export function CelestialHeroCanvas() {
     updateArcPosition(sunMesh, sunProgress, info?.sun.visible ?? true);
     updateArcPosition(moonMesh, moonProgress, info?.moon.visible ?? true);
 
-    // --- INTERACTIVE POINTER DRAG & PARALLAX ---
+    // --- 4. INTERACTIVE POINTER DRAG & PARALLAX ---
     let targetRotX = 0;
     let targetRotY = 0;
     let isDragging = false;
@@ -198,7 +309,6 @@ export function CelestialHeroCanvas() {
         previousMouseX = clientX;
         previousMouseY = clientY;
       } else {
-        // Subtle hover tilt
         const rect = container.getBoundingClientRect();
         targetRotY = ((clientX - rect.left) / rect.width - 0.5) * 0.25;
         targetRotX = ((clientY - rect.top) / rect.height - 0.5) * 0.2;
@@ -216,22 +326,24 @@ export function CelestialHeroCanvas() {
     container.addEventListener("touchmove", handlePointerMove, { passive: true });
     window.addEventListener("touchend", handlePointerUp);
 
-    // Animation Render Loop
+    // Animation Loop
     let animId: number;
     const clock = new THREE.Clock();
 
     const animate = () => {
       const elapsedTime = clock.getElapsedTime();
 
-      // Very slow natural rotation of Sun & Moon
-      sunMesh.rotation.y = elapsedTime * 0.05;
-      moonMesh.rotation.y = elapsedTime * 0.02;
+      // Very slow natural rotation
+      sunMesh.rotation.y = elapsedTime * 0.04;
+      moonMesh.rotation.y = elapsedTime * 0.015;
 
-      // Smooth Lerp Dampening for Pointer Drag & Parallax
+      // Gentle rotation pulse of sunbeam rays
+      sunbeamSprite.rotation.z = Math.sin(elapsedTime * 0.5) * 0.03;
+
+      // Smooth Lerp Dampening
       sceneGroup.rotation.y += (targetRotY - sceneGroup.rotation.y) * 0.05;
       sceneGroup.rotation.x += (targetRotX - sceneGroup.rotation.x) * 0.05;
 
-      // Clamp rotation angles so scene doesn't flip upside down
       sceneGroup.rotation.x = Math.max(-0.35, Math.min(0.35, sceneGroup.rotation.x));
       sceneGroup.rotation.y = Math.max(-0.6, Math.min(0.6, sceneGroup.rotation.y));
 
@@ -268,16 +380,17 @@ export function CelestialHeroCanvas() {
       renderer.dispose();
       sunGeo.dispose();
       sunMat.dispose();
-      coronaGeo.dispose();
-      coronaMat.dispose();
+      sunbeamTexture.dispose();
+      sunbeamMat.dispose();
       moonGeo.dispose();
+      lunarTexture.dispose();
       moonMat.dispose();
       starGeo.dispose();
       starMat.dispose();
       arcGeo.dispose();
       arcMat.dispose();
     };
-  }, [sunProgress, moonProgress, isNight, illumination, isWaxing, info?.sun.visible, info?.moon.visible]);
+  }, [sunProgress, moonProgress, phase, isNight, isSunsetOrSunrise, illumination, isWaxing, info?.sun.visible, info?.moon.visible]);
 
   if (!hasWebGL) {
     return (

@@ -11,6 +11,7 @@ import { ImportantTimingsSection } from "@/components/landing/ImportantTimingsSe
 import { ProductTiersSection } from "@/components/landing/ProductTiersSection";
 import {
   buildLocationSearchParams,
+  fetchCityFromCoordinates,
   getBrowserTimezone,
 } from "@/lib/location";
 import type { PanchangamDay, LocationParameters, PanchangamApiSuccessResponse } from "@/lib/types/panchangam";
@@ -26,26 +27,38 @@ export function SingleLandingPage({
 }: SingleLandingPageProps) {
   const [dayData, setDayData] = useState<PanchangamDay>(initialDay);
   const [location, setLocation] = useState<LocationParameters>(initialLocation);
+  const [cityName, setCityName] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) return;
 
     const timezone = getBrowserTimezone();
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const lat = pos.coords.latitude;
           const lon = pos.coords.longitude;
-          const params = buildLocationSearchParams({
-            date: initialDay.date,
-            latitude: lat,
-            longitude: lon,
-            timezone,
-          });
 
-          const res = await fetch(`/api/v1/panchangam/date?${params.toString()}`);
-          if (res.ok) {
-            const payload = (await res.json()) as PanchangamApiSuccessResponse;
+          // Simultaneously fetch reverse geocoded city name and Panchangam API data
+          const [cityResolved, apiRes] = await Promise.all([
+            fetchCityFromCoordinates(lat, lon),
+            fetch(
+              `/api/v1/panchangam/date?${buildLocationSearchParams({
+                date: initialDay.date,
+                latitude: lat,
+                longitude: lon,
+                timezone,
+              }).toString()}`
+            ),
+          ]);
+
+          if (cityResolved) {
+            setCityName(cityResolved);
+          }
+
+          if (apiRes.ok) {
+            const payload = (await apiRes.json()) as PanchangamApiSuccessResponse;
             if (payload.success) {
               setDayData(payload.data);
               setLocation(payload.meta.location);
@@ -63,14 +76,14 @@ export function SingleLandingPage({
   return (
     <TimeOfDayProviderBase data={dayData}>
       <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500">
-        <Navbar />
+        <Navbar cityName={cityName} />
 
         <main id="main-content" className="flex-1">
           {/* Section 1: Hero */}
-          <HeroSection data={dayData} location={location} />
+          <HeroSection data={dayData} location={location} cityName={cityName} />
 
           {/* Section 2: Today's Panchangam */}
-          <TodayPanchangamSection data={dayData} location={location} />
+          <TodayPanchangamSection data={dayData} location={location} cityName={cityName} />
 
           {/* Section 3: Sun & Moon */}
           <SunMoonSection data={dayData} />
