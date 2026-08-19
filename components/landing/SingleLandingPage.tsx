@@ -10,7 +10,6 @@ import { SunMoonSection } from "@/components/landing/SunMoonSection";
 import { ImportantTimingsSection } from "@/components/landing/ImportantTimingsSection";
 import { ProductTiersSection } from "@/components/landing/ProductTiersSection";
 import {
-  buildLocationSearchParams,
   fetchCityFromCoordinates,
   getBrowserTimezone,
 } from "@/lib/location";
@@ -42,15 +41,15 @@ export function SingleLandingPage({
     async (mode: "today" | "yesterday" | "tomorrow", loc: LocationParameters) => {
       setIsLoading(true);
       try {
-        const query = buildLocationSearchParams({
-          date: initialDay.date,
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          timezone: loc.timezone,
-        }).toString();
+        const query = new URLSearchParams({ timezone: loc.timezone });
+
+        if (loc.latitude !== null && loc.longitude !== null) {
+          query.set("latitude", loc.latitude.toString());
+          query.set("longitude", loc.longitude.toString());
+        }
 
         const endpoint = `/api/v1/panchangam/${mode}?${query}`;
-        const res = await fetch(endpoint);
+        const res = await fetch(endpoint, { cache: "no-store" });
 
         if (res.ok) {
           const payload = (await res.json()) as
@@ -67,7 +66,7 @@ export function SingleLandingPage({
         setIsLoading(false);
       }
     },
-    [initialDay.date]
+    []
   );
 
   // Handle Mode Change (Yesterday | Today | Tomorrow)
