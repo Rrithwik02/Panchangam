@@ -1,4 +1,5 @@
 import { SingleLandingPage } from "@/components/landing/SingleLandingPage";
+import { todaysPanchangam } from "@/lib/mock-panchangam";
 import { getBrowserTimezone } from "@/lib/location";
 import { getPanchangamByDate } from "@/lib/services/panchangam-service";
 import type { Metadata } from "next";
@@ -13,11 +14,11 @@ export default async function PremiumPage() {
   const timezone = getBrowserTimezone();
   const location = { latitude: null, longitude: null, timezone };
   const todayDate = new Date().toISOString().slice(0, 10);
-  const todayResult = await getPanchangamByDate(todayDate, location);
+  const todayResult = await getPanchangamByDate(todayDate);
 
   return (
     <SingleLandingPage
-      initialDay={todayResult.day}
+      initialDay={todayResult.day ?? todaysPanchangam}
       initialLocation={location}
     />
   );

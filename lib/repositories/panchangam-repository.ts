@@ -13,6 +13,23 @@ export interface PanchangamRecordResult {
   source: PanchangamDataSource;
 }
 
+export interface PanchangamRepositoryError {
+  code: "DATA_NOT_FOUND" | "SUPABASE_ERROR";
+  message: string;
+  status: number;
+}
+
+export interface PanchangamDateLookupResult {
+  day?: PanchangamDay;
+  source?: PanchangamDataSource;
+  error?: PanchangamRepositoryError;
+}
+
+export interface PanchangamRangeLookupResult {
+  items?: PanchangamRecordResult[];
+  error?: PanchangamRepositoryError;
+}
+
 function asString(value: unknown, fallback = "") {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
@@ -106,14 +123,29 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
   };
 }
 
+function cloneReferenceDayForDate(date: string): PanchangamDay {
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+
+  return {
+    ...todaysPanchangam,
+    date,
+    dateLabel: formattedDate,
+  };
+}
+
 function getQueryClient() {
   return getSupabaseAdminClient();
 }
 
-export async function fetchPanchangamByDate(date: string): Promise<PanchangamRecordResult> {
+export async function fetchPanchangamByDate(date: string): Promise<PanchangamDateLookupResult> {
   const client = getQueryClient();
   if (!client) {
-    return { day: todaysPanchangam, source: "reference" };
+    return { day: cloneReferenceDayForDate(date), source: "reference" };
   }
 
   const { data, error } = await client
@@ -122,8 +154,24 @@ export async function fetchPanchangamByDate(date: string): Promise<PanchangamRec
     .eq("date", date)
     .maybeSingle();
 
-  if (error || !data) {
-    return { day: todaysPanchangam, source: "reference" };
+  if (error) {
+    return {
+      error: {
+        code: "SUPABASE_ERROR",
+        message: "Unable to read Panchangam data from Supabase.",
+        status: 502,
+      },
+    };
+  }
+
+  if (!data) {
+    return {
+      error: {
+        code: "DATA_NOT_FOUND",
+        message: "Panchangam data is not available for the requested date.",
+        status: 404,
+      },
+    };
   }
 
   return { day: mapSupabaseRowToDay(data), source: "supabase" };
@@ -132,10 +180,12 @@ export async function fetchPanchangamByDate(date: string): Promise<PanchangamRec
 export async function fetchPanchangamByRange(
   startDate: string,
   endDate: string
-): Promise<PanchangamRecordResult[]> {
+): Promise<PanchangamRangeLookupResult> {
   const client = getQueryClient();
   if (!client) {
-    return dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" }));
+    return {
+      items: dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" })),
+    };
   }
 
   const { data, error } = await client
@@ -145,19 +195,35 @@ export async function fetchPanchangamByRange(
     .lte("date", endDate)
     .order("date", { ascending: true });
 
-  if (error || !data) {
-    return dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" }));
+  if (error) {
+    return {
+      error: {
+        code: "SUPABASE_ERROR",
+        message: "Unable to read Panchangam data from Supabase.",
+        status: 502,
+      },
+    };
   }
 
-  return data.length > 0
-    ? data.map((row) => ({ day: mapSupabaseRowToDay(row), source: "supabase" as const }))
-    : dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" }));
+  if (!data || data.length === 0) {
+    return {
+      error: {
+        code: "DATA_NOT_FOUND",
+        message: "Panchangam data is not available for the requested date range.",
+        status: 404,
+      },
+    };
+  }
+
+  return {
+    items: data.map((row) => ({ day: mapSupabaseRowToDay(row), source: "supabase" as const })),
+  };
 }
 
 export async function fetchPanchangamByMonth(
   year: number,
   month: number
-): Promise<PanchangamRecordResult[]> {
+): Promise<PanchangamRangeLookupResult> {
   const startDate = `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-01`;
   const end = new Date(Date.UTC(year, month, 0));
   const endDate = end.toISOString().slice(0, 10);

@@ -48,11 +48,32 @@ export interface PanchangamApiMeta {
   location: LocationParameters;
   calculation_source: "dynamic" | "precomputed" | "reference";
   data_source?: "supabase" | "reference";
+  access?: "full" | "preview";
+  preview_fields?: string[];
 }
 
 export interface PanchangamApiSuccessResponse {
   success: true;
   data: PanchangamDay;
+  meta: PanchangamApiMeta;
+}
+
+export interface PanchangamPreviewDay {
+  date: string;
+  dateLabel: string;
+  vara: string;
+  paksha: string;
+  tithi: string;
+  nakshatra: string;
+  location: string;
+  access: "preview";
+  previewFields: string[];
+  upgradeMessage: string;
+}
+
+export interface PanchangamApiPreviewResponse {
+  success: true;
+  data: PanchangamPreviewDay;
   meta: PanchangamApiMeta;
 }
 
