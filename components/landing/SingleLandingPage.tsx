@@ -77,33 +77,46 @@ export function SingleLandingPage({
 
   // Device Location Resolution & Initial Fetch
   useEffect(() => {
-    if (typeof navigator === "undefined" || !("geolocation" in navigator)) return;
-
     const timezone = getBrowserTimezone();
+    const timezoneOnlyLocation: LocationParameters = {
+      latitude: null,
+      longitude: null,
+      timezone,
+    };
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          const userLocation: LocationParameters = { latitude: lat, longitude: lon, timezone };
+    const initialFetchTimeout = window.setTimeout(() => {
+      void fetchRelativeData("today", timezoneOnlyLocation);
+    }, 0);
 
-          // Fetch reverse geocoded city name & Today API payload
-          const [cityResolved] = await Promise.all([
-            fetchCityFromCoordinates(lat, lon),
-            fetchRelativeData("today", userLocation),
-          ]);
+    if (typeof navigator !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const userLocation: LocationParameters = { latitude: lat, longitude: lon, timezone };
 
-          if (cityResolved) {
-            setCityName(cityResolved);
+            // Fetch reverse geocoded city name & Today API payload
+            const [cityResolved] = await Promise.all([
+              fetchCityFromCoordinates(lat, lon),
+              fetchRelativeData("today", userLocation),
+            ]);
+
+            if (cityResolved) {
+              setCityName(cityResolved);
+            }
+          } catch {
+            // Fall back gracefully
           }
-        } catch {
-          // Fall back gracefully
-        }
-      },
-      () => {},
-      { timeout: 8000 }
-    );
+        },
+        () => {},
+        { timeout: 8000 }
+      );
+    }
+
+    return () => {
+      window.clearTimeout(initialFetchTimeout);
+    };
   }, [fetchRelativeData]);
 
   // Fall back to reference day for Three.js celestial provider if in preview mode
