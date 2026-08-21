@@ -105,6 +105,26 @@ export function parseStrictDate(date: string | null) {
   return parsed;
 }
 
+export function formatDateLabel(dateStr: string): string {
+  const parsed = parseStrictDate(dateStr);
+  if (!parsed) return dateStr;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(parsed);
+}
+
+export function getWeekdayNameForDate(dateStr: string): string {
+  const parsed = parseStrictDate(dateStr);
+  if (!parsed) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(parsed);
+}
+
 export function getCurrentReferenceDate() {
   const override = process.env.PANCHANGAM_TEST_NOW;
   if (override) {

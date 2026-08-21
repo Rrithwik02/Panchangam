@@ -84,9 +84,9 @@ function createDateAccessItems(today: PanchangamDay, tomorrow: PanchangamDay) {
       access: "preview" as const,
       previewFields: ["Tithi", "Vara", "Nakshatra"],
     },
-    { label: formatShortDate(offsetDate(1)), date: offsetDate(1), access: "locked" as const },
     { label: formatShortDate(offsetDate(2)), date: offsetDate(2), access: "locked" as const },
     { label: formatShortDate(offsetDate(3)), date: offsetDate(3), access: "locked" as const },
+    { label: formatShortDate(offsetDate(4)), date: offsetDate(4), access: "locked" as const },
   ];
 }
 

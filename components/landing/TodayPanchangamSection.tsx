@@ -1,7 +1,6 @@
 "use client";
 
-import { Sparkles, Sun, Moon, MapPin, Lock } from "lucide-react";
-import { formatLocationCity } from "@/lib/location";
+import { Sparkles, Sun, Moon, Lock, AlertCircle } from "lucide-react";
 import type { PanchangamDay, PanchangamPreviewDay, LocationParameters } from "@/lib/types/panchangam";
 
 interface TodayPanchangamSectionProps {
@@ -11,19 +10,18 @@ interface TodayPanchangamSectionProps {
   activeMode: "today" | "yesterday" | "tomorrow";
   onModeChange: (mode: "today" | "yesterday" | "tomorrow") => void;
   isLoading?: boolean;
+  errorMessage?: string | null;
+  onRetry?: () => void;
 }
 
 export function TodayPanchangamSection({
   data,
-  location,
-  cityName,
   activeMode,
   onModeChange,
   isLoading = false,
+  errorMessage = null,
+  onRetry,
 }: TodayPanchangamSectionProps) {
-  const loc = location || { latitude: null, longitude: null, timezone: "Asia/Kolkata" };
-  const city = formatLocationCity(loc, cityName);
-
   const scrollToPremium = () => {
     document.getElementById("premium")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -87,6 +85,23 @@ export function TodayPanchangamSection({
             </button>
           </div>
         </div>
+
+        {errorMessage && (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-400">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
+              <p className="text-sm font-medium">{errorMessage}</p>
+            </div>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="shrink-0 rounded-lg border border-red-500/40 px-3 py-1.5 text-xs font-semibold hover:bg-red-500/20 transition-colors"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Festival Ribbon if present */}
         {fullData?.festivals && fullData.festivals.length > 0 && (

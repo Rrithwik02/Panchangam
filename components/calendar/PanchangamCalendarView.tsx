@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, AlertCircle } from "lucide-react";
 import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 import { TodayPanchangamView } from "@/components/panchangam/TodayPanchangamView";
 
@@ -19,6 +19,7 @@ export function PanchangamCalendarView({
   const [currentMonth, setCurrentMonth] = useState<number>(8); // August
   const [selectedDayData, setSelectedDayData] = useState<PanchangamDay>(initialDay);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -54,6 +55,7 @@ export function PanchangamCalendarView({
 
     setSelectedDate(dateStr);
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
       const timezone = location?.timezone || "Asia/Kolkata";
@@ -65,10 +67,18 @@ export function PanchangamCalendarView({
         const payload = await res.json();
         if (payload.success && payload.data) {
           setSelectedDayData(payload.data);
+          setErrorMessage(null);
+        } else {
+          setErrorMessage("Unable to load live Panchangam data for " + dateStr);
         }
+      } else {
+        const errJson = await res.json().catch(() => null);
+        setErrorMessage(
+          errJson?.error?.message || `Panchangam data unavailable for ${dateStr} (${res.status}).`
+        );
       }
     } catch {
-      // Keep reference day if fetch fails
+      setErrorMessage(`Unable to connect to Panchangam service for ${dateStr}.`);
     } finally {
       setIsLoading(false);
     }
@@ -187,6 +197,13 @@ export function PanchangamCalendarView({
           </h3>
           {isLoading && <span className="text-xs text-accent animate-pulse">Loading Panchangam...</span>}
         </div>
+
+        {errorMessage && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-medium text-red-700 dark:text-red-400">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
+            <p>{errorMessage}</p>
+          </div>
+        )}
 
         <TodayPanchangamView data={selectedDayData} location={location} />
       </div>
