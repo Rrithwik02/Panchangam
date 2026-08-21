@@ -35,11 +35,13 @@ export function SingleLandingPage({
   const [location, setLocation] = useState<LocationParameters>(initialLocation);
   const [cityName, setCityName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Fetch relative Panchangam data from API (Today, Yesterday, Tomorrow)
   const fetchRelativeData = useCallback(
     async (mode: "today" | "yesterday" | "tomorrow", loc: LocationParameters) => {
       setIsLoading(true);
+      setErrorMessage(null);
       try {
         const query = new URLSearchParams({ timezone: loc.timezone });
 
@@ -58,10 +60,23 @@ export function SingleLandingPage({
           if (payload.success) {
             setDayData(payload.data);
             setLocation(payload.meta.location);
+            setErrorMessage(null);
+          } else {
+            setErrorMessage("Unable to load Panchangam data for the selected date.");
           }
+        } else {
+          const errPayload = await res.json().catch(() => null);
+          const msg =
+            errPayload?.error?.message ||
+            `Live Panchangam data unavailable (${res.status}).`;
+          setErrorMessage(msg);
         }
-      } catch {
-        // Keep existing payload on network failure
+      } catch (err) {
+        setErrorMessage(
+          err instanceof Error
+            ? err.message
+            : "Network error: Unable to connect to Panchangam service."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -85,7 +100,7 @@ export function SingleLandingPage({
     };
 
     const initialFetchTimeout = window.setTimeout(() => {
-      void fetchRelativeData("today", timezoneOnlyLocation);
+      void fetchRelativeData(activeMode, timezoneOnlyLocation);
     }, 0);
 
     if (typeof navigator !== "undefined" && "geolocation" in navigator) {
@@ -96,10 +111,10 @@ export function SingleLandingPage({
             const lon = pos.coords.longitude;
             const userLocation: LocationParameters = { latitude: lat, longitude: lon, timezone };
 
-            // Fetch reverse geocoded city name & Today API payload
+            // Fetch reverse geocoded city name & API payload for current mode
             const [cityResolved] = await Promise.all([
               fetchCityFromCoordinates(lat, lon),
-              fetchRelativeData("today", userLocation),
+              fetchRelativeData(activeMode, userLocation),
             ]);
 
             if (cityResolved) {
@@ -117,7 +132,7 @@ export function SingleLandingPage({
     return () => {
       window.clearTimeout(initialFetchTimeout);
     };
-  }, [fetchRelativeData]);
+  }, [fetchRelativeData, activeMode]);
 
   // Fall back to reference day for Three.js celestial provider if in preview mode
   const providerData: PanchangamDay =
@@ -142,6 +157,8 @@ export function SingleLandingPage({
             activeMode={activeMode}
             onModeChange={handleModeChange}
             isLoading={isLoading}
+            errorMessage={errorMessage}
+            onRetry={() => fetchRelativeData(activeMode, location)}
           />
 
           {/* Section 3: Sun & Moon */}

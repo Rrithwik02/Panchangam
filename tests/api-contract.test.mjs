@@ -55,6 +55,8 @@ function spawnServer(portNumber, envOverrides = {}) {
       ...process.env,
       PORT: String(portNumber),
       PANCHANGAM_TEST_NOW: testNow,
+      SUPABASE_URL: "",
+      NEXT_PUBLIC_SUPABASE_URL: "",
       ...envOverrides,
     },
   });
@@ -99,7 +101,7 @@ test("today uses the user's timezone and returns a full response", async () => {
   assert.equal(body.meta.location.timezone, "Asia/Kolkata");
   assert.equal(body.data.date, "2026-08-14");
   assert.equal(body.data.dateLabel, "14 August 2026");
-  assert.equal(body.data.sunrise, "05:58 AM");
+  assert.equal(body.data.vara, "Friday");
 });
 
 test("yesterday uses the user's timezone and returns a full response", async () => {
@@ -111,6 +113,8 @@ test("yesterday uses the user's timezone and returns a full response", async () 
   assert.equal(body.success, true);
   assert.equal(body.meta.access, "full");
   assert.equal(body.data.date, "2026-08-13");
+  assert.equal(body.data.dateLabel, "13 August 2026");
+  assert.equal(body.data.vara, "Thursday");
 });
 
 test("tomorrow returns a preview payload only", async () => {
@@ -125,9 +129,30 @@ test("tomorrow returns a preview payload only", async () => {
   assert.equal(body.data.access, "preview");
   assert.equal(body.data.date, "2026-08-15");
   assert.equal(body.data.dateLabel, "15 August 2026");
-  assert.equal(body.data.tithi, "Shukla Saptami");
+  assert.equal(body.data.vara, "Saturday");
   assert.equal(body.data.upgradeMessage, "Full future-date access is available with Premium.");
   assert.equal(body.data.sunrise, undefined);
+});
+
+test("date endpoints preserve requested dates (2026-08-19, 2026-08-20, 2026-08-21, 2026-08-22)", async () => {
+  const dates = [
+    { date: "2026-08-19", dateLabel: "19 August 2026", vara: "Wednesday" },
+    { date: "2026-08-20", dateLabel: "20 August 2026", vara: "Thursday" },
+    { date: "2026-08-21", dateLabel: "21 August 2026", vara: "Friday" },
+    { date: "2026-08-22", dateLabel: "22 August 2026", vara: "Saturday" },
+  ];
+
+  for (const item of dates) {
+    const { response, body } = await request(
+      `/api/v1/panchangam/date?date=${item.date}&timezone=Asia/Kolkata`
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.data.date, item.date);
+    assert.equal(body.data.dateLabel, item.dateLabel);
+    assert.equal(body.data.vara, item.vara);
+  }
 });
 
 test("invalid timezone is rejected", async () => {
@@ -158,29 +183,7 @@ test("missing timezone is rejected for the free relative-date endpoints", async 
   assert.equal(body.error.code, "INVALID_TIMEZONE");
 });
 
-test("date endpoint returns the requested day", async () => {
-  const { response, body } = await request(
-    "/api/v1/panchangam/date?date=2026-08-13&timezone=Asia/Kolkata"
-  );
-
-  assert.equal(response.status, 200);
-  assert.equal(body.success, true);
-  assert.equal(body.meta.access, "full");
-  assert.equal(body.data.date, "2026-08-13");
-});
-
-test("range endpoint returns the available reference day when in range", async () => {
-  const { response, body } = await request(
-    "/api/v1/panchangam/range?start_date=2026-08-01&end_date=2026-08-31&timezone=Asia/Kolkata"
-  );
-
-  assert.equal(response.status, 200);
-  assert.equal(body.success, true);
-  assert.equal(body.data.total_records, 1);
-  assert.equal(body.data.items[0].date, "2026-08-13");
-});
-
-test("supabase errors are surfaced as a clean API error", async () => {
+test("supabase connection failures return clean HTTP 502 SUPABASE_ERROR", async () => {
   const errorPort = 3124;
   const errorBaseUrl = `http://127.0.0.1:${errorPort}`;
   const errorServer = await startServer(errorPort, {

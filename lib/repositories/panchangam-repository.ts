@@ -2,6 +2,7 @@ import "server-only";
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
+import { formatDateLabel, getWeekdayNameForDate } from "@/lib/api/panchangam";
 import type { PanchangamDay, TimingRange } from "@/lib/types/panchangam";
 
 type SupabaseRow = Record<string, unknown>;
@@ -81,10 +82,14 @@ function pick(row: SupabaseRow, candidates: string[], fallback: string) {
 }
 
 function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
+  const rowDate = asString(row.date, todaysPanchangam.date);
+  const derivedLabel = formatDateLabel(rowDate);
+  const derivedVara = getWeekdayNameForDate(rowDate);
+
   return {
-    date: asString(row.date, todaysPanchangam.date),
-    dateLabel: asString(row.date_label, todaysPanchangam.dateLabel),
-    vara: pick(row, ["vara", "weekday", "day_name"], todaysPanchangam.vara),
+    date: rowDate,
+    dateLabel: asString(row.date_label, derivedLabel),
+    vara: pick(row, ["vara", "weekday", "day_name"], derivedVara),
     tithi: pick(
       row,
       ["tithi", "tithi_name", "tithi1_name"],
@@ -118,23 +123,20 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
       "abhijit_muhurtham",
       todaysPanchangam.abhijitMuhurtham
     ),
-    festivals: asArrayOfStrings(row.festivals ?? row.festival_occasion, todaysPanchangam.festivals),
-    vratas: asArrayOfStrings(row.vratas, todaysPanchangam.vratas),
+    festivals: asArrayOfStrings(row.festivals ?? row.festival_occasion, []),
+    vratas: asArrayOfStrings(row.vratas, []),
   };
 }
 
 function cloneReferenceDayForDate(date: string): PanchangamDay {
-  const formattedDate = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T00:00:00Z`));
+  const formattedDate = formatDateLabel(date);
+  const weekday = getWeekdayNameForDate(date);
 
   return {
     ...todaysPanchangam,
     date,
     dateLabel: formattedDate,
+    vara: weekday || todaysPanchangam.vara,
   };
 }
 
