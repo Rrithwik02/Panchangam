@@ -53,18 +53,45 @@ function asArrayOfStrings(value: unknown, fallback: string[]) {
   return fallback;
 }
 
-function asTimingRange(
+function formatClockTime(value: string): string {
+  const match = value.match(/^(\d{1,2}):(\d{2})\s*(.*)$/);
+  if (!match) return value;
+
+  const [, hourStr, minute, suffix] = match;
+  const hour24 = Number(hourStr);
+  if (!Number.isFinite(hour24)) return value;
+
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  const formatted = `${hour12}:${minute} ${period}`;
+
+  return suffix ? `${formatted} ${suffix}` : formatted;
+}
+
+function parseRangeString(value: string): { start: string; end: string } | null {
+  const [start, end] = value.split(" - ");
+  if (!start || !end) return null;
+
+  return { start: formatClockTime(start.trim()), end: formatClockTime(end.trim()) };
+}
+
+function pickRange(
   row: SupabaseRow,
-  prefix: string,
+  candidates: string[],
+  label: string,
   fallback: TimingRange
 ): TimingRange {
-  const start = asString(row[`${prefix}_start`], fallback.start);
-  const end = asString(row[`${prefix}_end`], fallback.end);
-  return {
-    label: fallback.label,
-    start,
-    end,
-  };
+  for (const key of candidates) {
+    const raw = row[key];
+    if (typeof raw === "string" && raw.trim()) {
+      const parsed = parseRangeString(raw.trim());
+      if (parsed) {
+        return { label, ...parsed };
+      }
+    }
+  }
+
+  return fallback;
 }
 
 function pick(row: SupabaseRow, candidates: string[], fallback: string) {
@@ -108,19 +135,35 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
     yoga: pick(row, ["yoga", "yoga_name", "yoga1_name"], todaysPanchangam.yoga),
     karana: pick(row, ["karana", "karana_name", "karana1_name"], todaysPanchangam.karana),
     location: pick(row, ["location", "location_name", "timezone"], todaysPanchangam.location),
-    sunrise: asString(row.sunrise, todaysPanchangam.sunrise),
-    sunset: asString(row.sunset, todaysPanchangam.sunset),
-    moonrise: asString(row.moonrise, todaysPanchangam.moonrise),
-    moonset: asString(row.moonset, todaysPanchangam.moonset),
-    rahuKalam: asTimingRange(row, "rahu_kalam", todaysPanchangam.rahuKalam),
-    yamagandam: asTimingRange(row, "yamagandam", todaysPanchangam.yamagandam),
-    gulikaKalam: asTimingRange(row, "gulika_kalam", todaysPanchangam.gulikaKalam),
-    durmuhurtham: asTimingRange(row, "durmuhurtham", todaysPanchangam.durmuhurtham),
-    varjyam: asTimingRange(row, "varjyam", todaysPanchangam.varjyam),
-    amritaKalam: asTimingRange(row, "amrita_kalam", todaysPanchangam.amritaKalam),
-    abhijitMuhurtham: asTimingRange(
+    sunrise: formatClockTime(asString(row.sunrise, todaysPanchangam.sunrise)),
+    sunset: formatClockTime(asString(row.sunset, todaysPanchangam.sunset)),
+    moonrise: formatClockTime(asString(row.moonrise, todaysPanchangam.moonrise)),
+    moonset: formatClockTime(asString(row.moonset, todaysPanchangam.moonset)),
+    rahuKalam: pickRange(row, ["rahukalam", "rahu_kalam"], "Rahu Kalam", todaysPanchangam.rahuKalam),
+    yamagandam: pickRange(row, ["yamagandam", "yama_gandam"], "Yamagandam", todaysPanchangam.yamagandam),
+    gulikaKalam: pickRange(
       row,
-      "abhijit_muhurtham",
+      ["gulikakalam", "gulika_kalam"],
+      "Gulika Kalam",
+      todaysPanchangam.gulikaKalam
+    ),
+    durmuhurtham: pickRange(
+      row,
+      ["durmuhurtam1", "durmuhurtham1", "durmuhurtham"],
+      "Durmuhurtham",
+      todaysPanchangam.durmuhurtham
+    ),
+    varjyam: pickRange(row, ["varjyam1", "varjyam"], "Varjyam", todaysPanchangam.varjyam),
+    amritaKalam: pickRange(
+      row,
+      ["amruta_ghadiya1", "amrita_kalam"],
+      "Amrita Kalam",
+      todaysPanchangam.amritaKalam
+    ),
+    abhijitMuhurtham: pickRange(
+      row,
+      ["abhijit_muhurtam", "abhijit_muhurtham"],
+      "Abhijit Muhurtham",
       todaysPanchangam.abhijitMuhurtham
     ),
     festivals: asArrayOfStrings(row.festivals ?? row.festival_occasion, []),
