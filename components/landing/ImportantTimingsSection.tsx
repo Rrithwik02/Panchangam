@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, ShieldAlert, Sparkles, Lock } from "lucide-react";
+import { ShieldAlert, Sparkles, ArrowRight } from "lucide-react";
 import type { PanchangamDay, PanchangamPreviewDay, TimingRange } from "@/lib/types/panchangam";
 
 interface ImportantTimingsSectionProps {
@@ -17,78 +17,63 @@ export function ImportantTimingsSection({ data }: ImportantTimingsSectionProps) 
 
   return (
     <section id="important-timings" className="py-16 sm:py-20 border-b border-border/60">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Section Header */}
         <div className="border-b border-border/70 pb-4 space-y-1">
           <span className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Muhurtham & Inauspicious Hours
+            Muhurtham &amp; Inauspicious Hours
           </span>
           <h2 className="text-3xl font-serif-title font-semibold text-foreground">
-            Important Timings
+            Other Panchangam Timings
           </h2>
           <p className="text-sm text-muted">
-            Inauspicious Rahu Kalam & auspicious Brahma Muhurtham windows for {data.dateLabel}.
+            Inauspicious Rahu Kalam &amp; auspicious Brahma Muhurtham windows for {data.dateLabel}.
           </p>
         </div>
 
         {isPreview ? (
           <div
             onClick={scrollToPremium}
-            className="cursor-pointer rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-8 text-center transition-all hover:bg-accent/10 space-y-3"
+            className="cursor-pointer rounded-2xl border border-dashed border-border bg-card-muted/40 p-6 text-center transition-all hover:border-accent/40 space-y-1.5"
           >
-            <div className="inline-flex items-center gap-2 text-sm font-semibold text-accent">
-              <Lock className="h-4 w-4" />
-              <span>Auspicious & Inauspicious Timings locked for Tomorrow</span>
-            </div>
-            <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
-              Rahu Kalam, Yamagandam, Abhijit Muhurtham, and Amrita Kalam windows are available for Today & Yesterday, or unlock all future dates with Premium.
+            <p className="text-sm font-semibold text-foreground/80">
+              Rahu Kalam, Yamagandam &amp; Muhurtham windows become available once tomorrow arrives
             </p>
-            <button className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-xs font-semibold text-white shadow-xs">
-              Upgrade to Premium
+            <button className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
+              Unlock every future date with Premium
+              <ArrowRight className="h-3 w-3" />
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             {/* Inauspicious Timings Group */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-foreground pb-2 border-b border-border/60">
-                <ShieldAlert className="h-4 w-4 text-accent" />
-                <h3 className="font-serif-title font-semibold text-base">Inauspicious Periods</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-muted pb-2 border-b border-border/60">
+                <ShieldAlert className="h-3.5 w-3.5" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider">Inauspicious Periods</h3>
               </div>
 
-              <div className="space-y-3">
-                {fullData?.rahuKalam && (
-                  <TimingItem label="Rahu Kalam" range={fullData.rahuKalam} isWarning />
-                )}
-                {fullData?.yamagandam && (
-                  <TimingItem label="Yamagandam" range={fullData.yamagandam} isWarning />
-                )}
-                {fullData?.gulikaKalam && (
-                  <TimingItem label="Gulika Kalam" range={fullData.gulikaKalam} isWarning />
-                )}
-                {fullData?.durmuhurtham && (
-                  <TimingItem label="Durmuhurtham" range={fullData.durmuhurtham} isWarning />
-                )}
+              <div className="space-y-2">
+                {fullData?.rahuKalam && <TimingItem label="Rahu Kalam" range={fullData.rahuKalam} />}
+                {fullData?.yamagandam && <TimingItem label="Yamagandam" range={fullData.yamagandam} />}
+                {fullData?.gulikaKalam && <TimingItem label="Gulika Kalam" range={fullData.gulikaKalam} />}
+                {fullData?.durmuhurtham && <TimingItem label="Durmuhurtham" range={fullData.durmuhurtham} />}
               </div>
             </div>
 
             {/* Auspicious Timings Group */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-foreground pb-2 border-b border-border/60">
-                <Sparkles className="h-4 w-4 text-gold" />
-                <h3 className="font-serif-title font-semibold text-base">Auspicious Periods</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-muted pb-2 border-b border-border/60">
+                <Sparkles className="h-3.5 w-3.5 text-gold" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider">Auspicious Periods</h3>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {fullData?.abhijitMuhurtham && (
-                  <TimingItem label="Abhijit Muhurtham" range={fullData.abhijitMuhurtham} />
+                  <TimingItem label="Abhijit Muhurtham" range={fullData.abhijitMuhurtham} tone="gold" />
                 )}
-                {fullData?.amritaKalam && (
-                  <TimingItem label="Amrita Kalam" range={fullData.amritaKalam} />
-                )}
-                {fullData?.varjyam && (
-                  <TimingItem label="Varjyam" range={fullData.varjyam} />
-                )}
+                {fullData?.amritaKalam && <TimingItem label="Amrita Kalam" range={fullData.amritaKalam} tone="gold" />}
+                {fullData?.varjyam && <TimingItem label="Varjyam" range={fullData.varjyam} tone="gold" />}
               </div>
             </div>
           </div>
@@ -98,14 +83,22 @@ export function ImportantTimingsSection({ data }: ImportantTimingsSectionProps) 
   );
 }
 
-function TimingItem({ label, range, isWarning = false }: { label: string; range: TimingRange; isWarning?: boolean }) {
+function TimingItem({
+  label,
+  range,
+  tone = "accent",
+}: {
+  label: string;
+  range: TimingRange;
+  tone?: "accent" | "gold";
+}) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card p-3.5 text-xs text-foreground shadow-2xs">
-      <span className="font-medium text-foreground/90 flex items-center gap-1.5">
-        <Clock className={`h-3.5 w-3.5 ${isWarning ? "text-accent" : "text-gold"}`} />
+    <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs text-foreground border-b border-border/40 last:border-b-0">
+      <span className="font-medium text-foreground/80 flex items-center gap-2">
+        <span className={`h-1.5 w-1.5 rounded-full ${tone === "accent" ? "bg-accent" : "bg-gold"}`} />
         {label}
       </span>
-      <span className="font-semibold tabular-nums text-foreground">
+      <span className="font-semibold tabular-nums text-foreground shrink-0">
         {range.start} – {range.end}
       </span>
     </div>

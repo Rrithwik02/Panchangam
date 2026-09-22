@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Sun, Moon, Lock, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, ArrowRight } from "lucide-react";
+import { PeriodGroup } from "@/components/panchangam/PeriodGroup";
 import type { PanchangamDay, PanchangamPreviewDay, LocationParameters } from "@/lib/types/panchangam";
 
 interface TodayPanchangamSectionProps {
@@ -13,6 +14,12 @@ interface TodayPanchangamSectionProps {
   errorMessage?: string | null;
   onRetry?: () => void;
 }
+
+const MODES: { key: "yesterday" | "today" | "tomorrow"; label: string }[] = [
+  { key: "yesterday", label: "Yesterday" },
+  { key: "today", label: "Today" },
+  { key: "tomorrow", label: "Tomorrow" },
+];
 
 export function TodayPanchangamSection({
   data,
@@ -29,9 +36,15 @@ export function TodayPanchangamSection({
   const isPreview = "access" in data && data.access === "preview";
   const fullData = isPreview ? null : (data as PanchangamDay);
 
+  const tithis = data.tithis ?? [];
+  const nakshatras = data.nakshatras ?? [];
+  const yogas = fullData?.yogas ?? [];
+  const karanas = fullData?.karanas ?? [];
+  const vratas = fullData?.vratas ?? [];
+
   return (
     <section id="todays-panchangam" className="py-16 sm:py-20 border-b border-border/60">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Section Header & Date Switcher */}
         <div className="border-b border-border/70 pb-6 flex flex-wrap items-end justify-between gap-6">
           <div className="space-y-1">
@@ -47,47 +60,32 @@ export function TodayPanchangamSection({
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
-          <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card-muted/60 p-1.5 shadow-xs">
-            <button
-              onClick={() => onModeChange("yesterday")}
-              disabled={isLoading}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
-                activeMode === "yesterday"
-                  ? "bg-accent text-white shadow-xs"
-                  : "text-muted hover:text-foreground hover:bg-card-muted"
-              }`}
-            >
-              Yesterday
-            </button>
-
-            <button
-              onClick={() => onModeChange("today")}
-              disabled={isLoading}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
-                activeMode === "today"
-                  ? "bg-accent text-white shadow-xs"
-                  : "text-muted hover:text-foreground hover:bg-card-muted"
-              }`}
-            >
-              Today
-            </button>
-
-            <button
-              onClick={() => onModeChange("tomorrow")}
-              disabled={isLoading}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
-                activeMode === "tomorrow"
-                  ? "bg-accent text-white shadow-xs"
-                  : "text-muted hover:text-foreground hover:bg-card-muted"
-              }`}
-            >
-              Tomorrow
-            </button>
+          <div
+            className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card-muted/60 p-1.5 shadow-xs"
+            role="tablist"
+            aria-label="Select date"
+          >
+            {MODES.map(({ key, label }) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={activeMode === key}
+                onClick={() => onModeChange(key)}
+                disabled={isLoading}
+                className={`min-h-[36px] rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                  activeMode === key
+                    ? "bg-accent text-white shadow-xs"
+                    : "text-muted hover:text-foreground hover:bg-card-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
         {errorMessage && (
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-400">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-400">
             <div className="flex items-center gap-2.5">
               <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
               <p className="text-sm font-medium">{errorMessage}</p>
@@ -103,123 +101,66 @@ export function TodayPanchangamSection({
           </div>
         )}
 
-        {/* Festival Ribbon if present */}
-        {fullData?.festivals && fullData.festivals.length > 0 && (
-          <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-foreground">
-            <Sparkles className="h-5 w-5 text-accent shrink-0" />
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                Festival of the Day
-              </span>
-              <p className="text-base font-serif-title font-semibold">
-                {fullData.festivals.join(" · ")}
-              </p>
+        {/* Festival / Vrata Ribbon */}
+        {((data.festivals && data.festivals.length > 0) || vratas.length > 0) && (
+          <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-foreground">
+            <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+            <div className="space-y-1.5">
+              {data.festivals && data.festivals.length > 0 && (
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                    {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
+                  </span>
+                  <p className="text-base font-serif-title font-semibold">
+                    {data.festivals.join(" · ")}
+                  </p>
+                </div>
+              )}
+              {vratas.length > 0 && (
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    {vratas.length > 1 ? "Vratas" : "Vrata"}
+                  </span>
+                  <p className="text-sm text-foreground/90">{vratas.join(" · ")}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* Primary Panchangam Data Card */}
-        <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 space-y-6 shadow-xs relative overflow-hidden">
+        <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 space-y-8 shadow-xs relative overflow-hidden">
           {isLoading && (
             <div className="absolute inset-0 bg-card/60 backdrop-blur-xs flex items-center justify-center z-20">
               <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             </div>
           )}
 
-          {/* Top Row: Tithi & Nakshatra (Always Available) */}
-          <div className="grid gap-6 sm:grid-cols-2 border-b border-border/60 pb-6">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Primary Tithi
-              </span>
-              <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
-                {data.tithi}
-              </p>
-              <p className="text-xs text-accent font-medium">{data.paksha} Paksha</p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Nakshatra
-              </span>
-              <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
-                {data.nakshatra}
-              </p>
-              <p className="text-xs text-gold font-medium">Ruling Star of the Day</p>
-            </div>
+          {/* Primary tier: Tithi & Nakshatra — always shown, every returned period rendered. */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <PeriodGroup label="Tithi" entries={tithis} tier="primary" accent="accent" />
+            <PeriodGroup label="Nakshatra" entries={nakshatras} tier="primary" accent="gold" />
           </div>
 
-          {/* Middle Row: Yoga & Karana (or Locked Preview) */}
-          <div className="grid gap-6 sm:grid-cols-2 border-b border-border/60 pb-6">
-            {isPreview ? (
-              <div
-                onClick={scrollToPremium}
-                className="col-span-2 cursor-pointer rounded-xl border border-dashed border-accent/40 bg-accent/5 p-5 text-center transition-all hover:bg-accent/10 space-y-1.5"
-              >
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>Unlock full Panchangam (Yoga & Karana)</span>
-                </div>
-                <p className="text-xs text-muted">
-                  Explore more future date details with Premium
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">Yoga</span>
-                  <p className="text-xl font-serif-title font-semibold text-foreground">{fullData?.yoga}</p>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">Karana</span>
-                  <p className="text-xl font-serif-title font-semibold text-foreground">{fullData?.karana}</p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Bottom Row: Solar & Lunar Timings (or Locked Preview) */}
+          {/* Secondary tier: Yoga & Karana. Tomorrow is intentionally a lighter preview
+              and does not show this detailed layer. */}
           {isPreview ? (
             <div
               onClick={scrollToPremium}
-              className="cursor-pointer rounded-xl border border-dashed border-border bg-card-muted/40 p-4 text-center transition-all hover:border-accent/40 space-y-1"
+              className="cursor-pointer rounded-xl border border-dashed border-border bg-card-muted/40 p-5 text-center transition-all hover:border-accent/40 space-y-1"
             >
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted">
-                <Lock className="h-3.5 w-3.5 text-accent" />
-                <span>Solar & Lunar Timings locked for Tomorrow preview</span>
-              </div>
-              <p className="text-xs text-muted/80">Click to view Premium plans</p>
+              <p className="text-xs font-semibold text-foreground/80">
+                Yoga, Karana & daily timings become available once the date arrives
+              </p>
+              <button className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
+                See what Premium unlocks for future dates
+                <ArrowRight className="h-3 w-3" />
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm pt-2">
-              <div className="space-y-0.5">
-                <span className="text-xs text-muted flex items-center gap-1.5">
-                  <Sun className="h-3.5 w-3.5 text-accent" /> Sunrise
-                </span>
-                <span className="font-semibold tabular-nums text-foreground">{fullData?.sunrise}</span>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-xs text-muted flex items-center gap-1.5">
-                  <Sun className="h-3.5 w-3.5 text-accent opacity-80" /> Sunset
-                </span>
-                <span className="font-semibold tabular-nums text-foreground">{fullData?.sunset}</span>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-xs text-muted flex items-center gap-1.5">
-                  <Moon className="h-3.5 w-3.5 text-gold" /> Moonrise
-                </span>
-                <span className="font-semibold tabular-nums text-foreground">{fullData?.moonrise}</span>
-              </div>
-
-              <div className="space-y-0.5">
-                <span className="text-xs text-muted flex items-center gap-1.5">
-                  <Moon className="h-3.5 w-3.5 text-muted" /> Moonset
-                </span>
-                <span className="font-semibold tabular-nums text-foreground">{fullData?.moonset}</span>
-              </div>
+            <div className="grid gap-6 sm:grid-cols-2 border-t border-border/60 pt-6">
+              <PeriodGroup label="Yoga" entries={yogas} tier="secondary" accent="accent" />
+              <PeriodGroup label="Karana" entries={karanas} tier="secondary" accent="gold" />
             </div>
           )}
         </div>

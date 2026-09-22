@@ -36,7 +36,7 @@ export function ProductTiersSection() {
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight text-foreground">$0</span>
+                <span className="text-4xl font-bold tracking-tight text-foreground">₹0</span>
                 <span className="text-xs text-muted font-medium">/ forever</span>
               </div>
 
@@ -91,7 +91,7 @@ export function ProductTiersSection() {
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight text-foreground">$9</span>
+                <span className="text-4xl font-bold tracking-tight text-foreground">₹300</span>
                 <span className="text-xs text-muted font-medium">/ month</span>
               </div>
 
@@ -144,7 +144,7 @@ export function ProductTiersSection() {
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight text-foreground">$29</span>
+                <span className="text-4xl font-bold tracking-tight text-foreground">₹600</span>
                 <span className="text-xs text-muted font-medium">/ month</span>
               </div>
 
