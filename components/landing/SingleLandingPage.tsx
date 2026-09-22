@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { TimeOfDayProviderBase } from "@/components/celestial/TimeOfDayProvider";
@@ -37,9 +37,16 @@ export function SingleLandingPage({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Guards against out-of-order responses: only the response matching the
+  // most recently issued request is allowed to update state. Without this,
+  // an older in-flight request (e.g. Yesterday) that resolves after a newer
+  // one (e.g. Today) would overwrite the UI with stale data.
+  const latestRequestIdRef = useRef(0);
+
   // Fetch relative Panchangam data from API (Today, Yesterday, Tomorrow)
   const fetchRelativeData = useCallback(
     async (mode: "today" | "yesterday" | "tomorrow", loc: LocationParameters) => {
+      const requestId = ++latestRequestIdRef.current;
       setIsLoading(true);
       setErrorMessage(null);
       try {
@@ -53,10 +60,13 @@ export function SingleLandingPage({
         const endpoint = `/api/v1/panchangam/${mode}?${query}`;
         const res = await fetch(endpoint, { cache: "no-store" });
 
+        if (requestId !== latestRequestIdRef.current) return; // superseded by a newer request
+
         if (res.ok) {
           const payload = (await res.json()) as
             | PanchangamApiSuccessResponse
             | PanchangamApiPreviewResponse;
+          if (requestId !== latestRequestIdRef.current) return;
           if (payload.success) {
             setDayData(payload.data);
             setLocation(payload.meta.location);
@@ -66,19 +76,23 @@ export function SingleLandingPage({
           }
         } else {
           const errPayload = await res.json().catch(() => null);
+          if (requestId !== latestRequestIdRef.current) return;
           const msg =
             errPayload?.error?.message ||
             `Live Panchangam data unavailable (${res.status}).`;
           setErrorMessage(msg);
         }
       } catch (err) {
+        if (requestId !== latestRequestIdRef.current) return;
         setErrorMessage(
           err instanceof Error
             ? err.message
             : "Network error: Unable to connect to Panchangam service."
         );
       } finally {
-        setIsLoading(false);
+        if (requestId === latestRequestIdRef.current) {
+          setIsLoading(false);
+        }
       }
     },
     []
@@ -90,7 +104,9 @@ export function SingleLandingPage({
     fetchRelativeData(mode, location);
   };
 
-  // Device Location Resolution & Initial Fetch
+  // Device Location Resolution & Initial Fetch (mount only — must not re-run
+  // on every mode switch, otherwise it re-triggers geolocation and fires a
+  // second, competing fetch for whatever mode is active at that moment).
   useEffect(() => {
     const timezone = getBrowserTimezone();
     const timezoneOnlyLocation: LocationParameters = {
@@ -100,7 +116,7 @@ export function SingleLandingPage({
     };
 
     const initialFetchTimeout = window.setTimeout(() => {
-      void fetchRelativeData(activeMode, timezoneOnlyLocation);
+      void fetchRelativeData("today", timezoneOnlyLocation);
     }, 0);
 
     if (typeof navigator !== "undefined" && "geolocation" in navigator) {
@@ -111,10 +127,10 @@ export function SingleLandingPage({
             const lon = pos.coords.longitude;
             const userLocation: LocationParameters = { latitude: lat, longitude: lon, timezone };
 
-            // Fetch reverse geocoded city name & API payload for current mode
+            // Fetch reverse geocoded city name & API payload for the initial mode
             const [cityResolved] = await Promise.all([
               fetchCityFromCoordinates(lat, lon),
-              fetchRelativeData(activeMode, userLocation),
+              fetchRelativeData("today", userLocation),
             ]);
 
             if (cityResolved) {
@@ -132,7 +148,8 @@ export function SingleLandingPage({
     return () => {
       window.clearTimeout(initialFetchTimeout);
     };
-  }, [fetchRelativeData, activeMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally mount-only
+  }, []);
 
   // Fall back to reference day for Three.js celestial provider if in preview mode
   const providerData: PanchangamDay =
