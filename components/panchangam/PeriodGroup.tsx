@@ -49,7 +49,7 @@ export function PeriodGroup({ label, entries, tier = "primary", accent = "accent
         </div>
       )}
 
-      <div className={entries.length > 1 ? "grid gap-3 sm:grid-cols-2" : undefined}>
+      <div className={entries.length > 1 ? "grid gap-3 lg:grid-cols-2" : undefined}>
         {entries.map((entry, index) => (
           <div key={`${entry.name}-${index}`} className="min-w-0">
             <p
