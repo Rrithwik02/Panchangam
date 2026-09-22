@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     "Explore multi-date, multi-location, and advanced astronomical Panchangam capabilities.",
 };
 
+// Panchangam data is per-date and changes daily — this page must never be
+// statically prerendered, or production would freeze whatever "today" was
+// at the last build and serve that snapshot to every visitor forever.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function PremiumPage() {
   const timezone = getBrowserTimezone();
   const location = { latitude: null, longitude: null, timezone };
