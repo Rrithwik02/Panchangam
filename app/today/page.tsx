@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     "View today's complete Panchangam including Tithi, Nakshatra, timings, and festivals.",
 };
 
+// Panchangam data is per-date and changes daily — this page must never be
+// statically prerendered, or production would freeze whatever "today" was
+// at the last build and serve that snapshot to every visitor forever.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function TodayPage() {
   const timezone = getBrowserTimezone();
   const location = { latitude: null, longitude: null, timezone };
