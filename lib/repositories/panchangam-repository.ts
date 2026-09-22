@@ -3,7 +3,7 @@ import "server-only";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
 import { formatDateLabel, getWeekdayNameForDate } from "@/lib/api/panchangam";
-import type { PanchangamDay, TimingRange } from "@/lib/types/panchangam";
+import type { PanchangamDay, PanchangamPeriodEntry, TimingRange } from "@/lib/types/panchangam";
 
 type SupabaseRow = Record<string, unknown>;
 
@@ -108,32 +108,72 @@ function pick(row: SupabaseRow, candidates: string[], fallback: string) {
   return fallback;
 }
 
+// A day can carry more than one Tithi/Nakshatra/Yoga/Karana period (e.g. one
+// ending mid-day, the next one starting after it). The schema numbers these
+// as tithi1_name, tithi2_name, ... — this scans that numbered sequence until
+// a gap is found, rather than assuming there is exactly one or two.
+const MAX_PERIOD_ENTRIES = 6;
+
+function collectPeriodEntries(
+  row: SupabaseRow,
+  baseField: string,
+  options: { withPaksha?: boolean } = {}
+): PanchangamPeriodEntry[] {
+  const entries: PanchangamPeriodEntry[] = [];
+
+  for (let index = 1; index <= MAX_PERIOD_ENTRIES; index++) {
+    const name = row[`${baseField}${index}_name`];
+    if (typeof name !== "string" || !name.trim()) break;
+
+    const entry: PanchangamPeriodEntry = { name: name.trim() };
+
+    if (options.withPaksha) {
+      const paksha = row[`${baseField}${index}_paksha`];
+      if (typeof paksha === "string" && paksha.trim()) {
+        entry.paksha = paksha.trim();
+      }
+    }
+
+    const endTime = row[`${baseField}${index}_end_time`];
+    if (typeof endTime === "string" && endTime.trim()) {
+      entry.endTime = formatClockTime(endTime.trim());
+    }
+
+    entries.push(entry);
+  }
+
+  return entries;
+}
+
 function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
   const rowDate = asString(row.date, todaysPanchangam.date);
   const derivedLabel = formatDateLabel(rowDate);
   const derivedVara = getWeekdayNameForDate(rowDate);
 
+  const tithis = collectPeriodEntries(row, "tithi", { withPaksha: true });
+  const nakshatras = collectPeriodEntries(row, "nakshatra");
+  const yogas = collectPeriodEntries(row, "yoga");
+  const karanas = collectPeriodEntries(row, "karana");
+
+  const resolvedTithis = tithis.length > 0 ? tithis : todaysPanchangam.tithis;
+  const resolvedNakshatras = nakshatras.length > 0 ? nakshatras : todaysPanchangam.nakshatras;
+  const resolvedYogas = yogas.length > 0 ? yogas : todaysPanchangam.yogas;
+  const resolvedKaranas = karanas.length > 0 ? karanas : todaysPanchangam.karanas;
+
   return {
     date: rowDate,
     dateLabel: asString(row.date_label, derivedLabel),
     vara: pick(row, ["vara", "weekday", "day_name"], derivedVara),
-    tithi: pick(
-      row,
-      ["tithi", "tithi_name", "tithi1_name"],
-      todaysPanchangam.tithi
-    ),
-    paksha: pick(
-      row,
-      ["paksha", "tithi_paksha", "tithi1_paksha"],
-      todaysPanchangam.paksha
-    ),
-    nakshatra: pick(
-      row,
-      ["nakshatra", "nakshatra_name", "nakshatra1_name"],
-      todaysPanchangam.nakshatra
-    ),
-    yoga: pick(row, ["yoga", "yoga_name", "yoga1_name"], todaysPanchangam.yoga),
-    karana: pick(row, ["karana", "karana_name", "karana1_name"], todaysPanchangam.karana),
+    // Primary (first/sunrise-time) values, kept for callers that only need one.
+    tithi: resolvedTithis[0]?.name ?? todaysPanchangam.tithi,
+    paksha: resolvedTithis[0]?.paksha ?? todaysPanchangam.paksha,
+    nakshatra: resolvedNakshatras[0]?.name ?? todaysPanchangam.nakshatra,
+    yoga: resolvedYogas[0]?.name ?? todaysPanchangam.yoga,
+    karana: resolvedKaranas[0]?.name ?? todaysPanchangam.karana,
+    tithis: resolvedTithis,
+    nakshatras: resolvedNakshatras,
+    yogas: resolvedYogas,
+    karanas: resolvedKaranas,
     location: pick(row, ["location", "location_name", "timezone"], todaysPanchangam.location),
     sunrise: formatClockTime(asString(row.sunrise, todaysPanchangam.sunrise)),
     sunset: formatClockTime(asString(row.sunset, todaysPanchangam.sunset)),

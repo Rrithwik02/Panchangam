@@ -282,7 +282,7 @@ export function buildPreviewDayResponse(
   location: LocationParameters,
   source: PanchangamApiMeta["calculation_source"] = "precomputed"
 ): PanchangamApiPreviewResponse {
-  const previewFields = ["Date", "Vara", "Paksha", "Tithi", "Nakshatra"];
+  const previewFields = ["Date", "Vara", "Paksha", "Tithi", "Nakshatra", "Festivals"];
   const data: PanchangamPreviewDay = {
     date: day.date,
     dateLabel: day.dateLabel,
@@ -290,6 +290,9 @@ export function buildPreviewDayResponse(
     paksha: day.paksha,
     tithi: day.tithi,
     nakshatra: day.nakshatra,
+    tithis: day.tithis,
+    nakshatras: day.nakshatras,
+    festivals: day.festivals,
     location: formatLocationLabel(location),
     access: "preview",
     previewFields,

@@ -14,6 +14,12 @@ interface TodayPanchangamSectionProps {
   onRetry?: () => void;
 }
 
+// "5:54 PM" -> "until 5:54 PM", but "Spans to next day" -> "Spans to next day"
+// (the source data isn't always a clock time, so don't force "until" onto it).
+function formatPeriodEndLabel(endTime: string): string {
+  return /^\d/.test(endTime) ? `until ${endTime}` : endTime;
+}
+
 export function TodayPanchangamSection({
   data,
   activeMode,
@@ -28,6 +34,11 @@ export function TodayPanchangamSection({
 
   const isPreview = "access" in data && data.access === "preview";
   const fullData = isPreview ? null : (data as PanchangamDay);
+
+  const tithis = data.tithis ?? [];
+  const nakshatras = data.nakshatras ?? [];
+  const yogas = fullData?.yogas ?? [];
+  const karanas = fullData?.karanas ?? [];
 
   return (
     <section id="todays-panchangam" className="py-16 sm:py-20 border-b border-border/60">
@@ -104,15 +115,15 @@ export function TodayPanchangamSection({
         )}
 
         {/* Festival Ribbon if present */}
-        {fullData?.festivals && fullData.festivals.length > 0 && (
+        {data.festivals && data.festivals.length > 0 && (
           <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-foreground">
             <Sparkles className="h-5 w-5 text-accent shrink-0" />
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                Festival of the Day
+                {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
               </span>
               <p className="text-base font-serif-title font-semibold">
-                {fullData.festivals.join(" · ")}
+                {data.festivals.join(" · ")}
               </p>
             </div>
           </div>
@@ -126,26 +137,44 @@ export function TodayPanchangamSection({
             </div>
           )}
 
-          {/* Top Row: Tithi & Nakshatra (Always Available) */}
+          {/* Top Row: Tithi & Nakshatra (Always Available). A day can have more
+              than one Tithi/Nakshatra period, so every record is rendered. */}
           <div className="grid gap-6 sm:grid-cols-2 border-b border-border/60 pb-6">
-            <div className="space-y-1">
+            <div className="space-y-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Primary Tithi
+                {tithis.length > 1 ? "Tithis" : "Tithi"}
               </span>
-              <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
-                {data.tithi}
-              </p>
-              <p className="text-xs text-accent font-medium">{data.paksha} Paksha</p>
+              {tithis.map((entry, index) => (
+                <div key={`${entry.name}-${index}`}>
+                  <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
+                    {entry.name}
+                  </p>
+                  <p className="text-xs text-accent font-medium">
+                    {[
+                      entry.paksha ? `${entry.paksha} Paksha` : null,
+                      entry.endTime ? formatPeriodEndLabel(entry.endTime) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+              ))}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Nakshatra
+                {nakshatras.length > 1 ? "Nakshatras" : "Nakshatra"}
               </span>
-              <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
-                {data.nakshatra}
-              </p>
-              <p className="text-xs text-gold font-medium">Ruling Star of the Day</p>
+              {nakshatras.map((entry, index) => (
+                <div key={`${entry.name}-${index}`}>
+                  <p className="text-2xl sm:text-3xl font-serif-title font-bold text-foreground">
+                    {entry.name}
+                  </p>
+                  <p className="text-xs text-gold font-medium">
+                    {entry.endTime ? formatPeriodEndLabel(entry.endTime) : "Ruling Star of the Day"}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -166,14 +195,32 @@ export function TodayPanchangamSection({
               </div>
             ) : (
               <>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">Yoga</span>
-                  <p className="text-xl font-serif-title font-semibold text-foreground">{fullData?.yoga}</p>
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    {yogas.length > 1 ? "Yogas" : "Yoga"}
+                  </span>
+                  {yogas.map((entry, index) => (
+                    <div key={`${entry.name}-${index}`}>
+                      <p className="text-xl font-serif-title font-semibold text-foreground">{entry.name}</p>
+                      {entry.endTime && (
+                        <p className="text-xs text-muted font-medium">{formatPeriodEndLabel(entry.endTime)}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">Karana</span>
-                  <p className="text-xl font-serif-title font-semibold text-foreground">{fullData?.karana}</p>
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    {karanas.length > 1 ? "Karanas" : "Karana"}
+                  </span>
+                  {karanas.map((entry, index) => (
+                    <div key={`${entry.name}-${index}`}>
+                      <p className="text-xl font-serif-title font-semibold text-foreground">{entry.name}</p>
+                      {entry.endTime && (
+                        <p className="text-xs text-muted font-medium">{formatPeriodEndLabel(entry.endTime)}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
