@@ -56,12 +56,6 @@ export function TodayPanchangamSection({
             <p className="text-sm text-muted">
               {data.vara} · {data.paksha} Paksha
             </p>
-            {fullData && (
-              <p className="text-xs text-muted/80">
-                {fullData.samvatsara} Samvatsara · {fullData.ayana} · {fullData.ritu} Ritu ·{" "}
-                {fullData.masa} Masa
-              </p>
-            )}
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
@@ -129,8 +123,23 @@ export function TodayPanchangamSection({
             </div>
           )}
 
+          {/* Calendar era: Samvatsara, Masa, Ayana, Ritu. Today/Yesterday only —
+              not part of the lighter Tomorrow preview. */}
+          {fullData && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <CalendarFact label="Samvatsara" value={fullData.samvatsara} />
+              <CalendarFact label="Masa" value={fullData.masa} />
+              <CalendarFact label="Ayana" value={fullData.ayana} />
+              <CalendarFact label="Ritu" value={fullData.ritu} />
+            </div>
+          )}
+
           {/* Primary tier: Tithi & Nakshatra — always shown, every returned period rendered. */}
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div
+            className={`grid gap-6 sm:grid-cols-2 ${
+              fullData ? "border-t border-border/60 pt-6" : ""
+            }`}
+          >
             <PeriodGroup label="Tithi" entries={tithis} tier="primary" accent="accent" />
             <PeriodGroup label="Nakshatra" entries={nakshatras} tier="primary" accent="gold" />
           </div>
@@ -159,5 +168,16 @@ export function TodayPanchangamSection({
         </div>
       </div>
     </section>
+  );
+}
+
+function CalendarFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</span>
+      <p className="text-lg sm:text-xl font-serif-title font-bold text-foreground leading-tight break-words">
+        {value}
+      </p>
+    </div>
   );
 }
