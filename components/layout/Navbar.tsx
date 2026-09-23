@@ -7,12 +7,14 @@ import { DayPhaseBadge } from "@/components/celestial/DayPhaseBadge";
 import { formatLocationCity } from "@/lib/location";
 import { useTimeOfDayOptional } from "@/components/celestial/TimeOfDayProvider";
 import { cn } from "@/lib/utils";
+import { NavAuth } from "@/components/layout/NavAuth";
 
 const navLinks = [
-  { href: "#todays-panchangam", label: "Today" },
-  { href: "#sun-moon", label: "Sun & Moon" },
-  { href: "#important-timings", label: "Timings" },
-  { href: "#premium", label: "Pricing" },
+  { href: "/#todays-panchangam", label: "Today" },
+  { href: "/#sun-moon", label: "Sun & Moon" },
+  { href: "/#important-timings", label: "Timings" },
+  { href: "/explore", label: "Explore" },
+  { href: "/#premium", label: "Pricing" },
 ];
 
 interface NavbarProps {
@@ -68,13 +70,16 @@ export function Navbar({ cityName }: NavbarProps) {
           ))}
         </div>
 
-        {/* Right side items: Location & Day Phase */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1 text-xs text-muted font-medium bg-card-muted/80 px-2.5 py-1 rounded-full border border-border/60">
+        {/* Right side items: Location, Day Phase & Account */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden lg:flex items-center gap-1 text-xs text-muted font-medium bg-card-muted/80 px-2.5 py-1 rounded-full border border-border/60">
             <MapPin className="h-3 w-3 text-accent" />
             <span>{city}</span>
           </div>
-          <DayPhaseBadge />
+          <div className="hidden sm:block">
+            <DayPhaseBadge />
+          </div>
+          <NavAuth />
         </div>
       </nav>
     </header>

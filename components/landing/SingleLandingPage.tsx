@@ -57,7 +57,12 @@ export function SingleLandingPage({
           query.set("longitude", loc.longitude.toString());
         }
 
-        const endpoint = `/api/v1/panchangam/${mode}?${query}`;
+        // Tomorrow goes through the session-aware website endpoint, which
+        // returns the full day for Pro subscribers and the preview otherwise.
+        const endpoint =
+          mode === "tomorrow"
+            ? `/api/web/panchangam/tomorrow?${query}`
+            : `/api/v1/panchangam/${mode}?${query}`;
         const res = await fetch(endpoint, { cache: "no-store" });
 
         if (requestId !== latestRequestIdRef.current) return; // superseded by a newer request

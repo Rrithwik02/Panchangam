@@ -8,8 +8,9 @@ interface TodayPanchangamSectionProps {
   data: PanchangamDay | PanchangamPreviewDay;
   location?: LocationParameters;
   cityName?: string | null;
-  activeMode: "today" | "yesterday" | "tomorrow";
-  onModeChange: (mode: "today" | "yesterday" | "tomorrow") => void;
+  /** Omit both to hide the Yesterday/Today/Tomorrow switcher (e.g. the date explorer). */
+  activeMode?: "today" | "yesterday" | "tomorrow";
+  onModeChange?: (mode: "today" | "yesterday" | "tomorrow") => void;
   isLoading?: boolean;
   errorMessage?: string | null;
   onRetry?: () => void;
@@ -63,6 +64,7 @@ export function TodayPanchangamSection({
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
+          {onModeChange && (
           <div
             className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card-muted/60 p-1.5 shadow-xs"
             role="tablist"
@@ -85,6 +87,7 @@ export function TodayPanchangamSection({
               </button>
             ))}
           </div>
+          )}
         </div>
 
         {errorMessage && (
@@ -159,10 +162,10 @@ export function TodayPanchangamSection({
               className="cursor-pointer rounded-xl border border-dashed border-border bg-card-muted/40 p-5 text-center transition-all hover:border-accent/40 space-y-1"
             >
               <p className="text-xs font-semibold text-foreground/80">
-                Yoga, Karana & daily timings become available once the date arrives
+                Tomorrow&apos;s full Panchangam — Yoga, Karana & daily timings — is included with Pro
               </p>
               <button className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
-                See what Premium unlocks for future dates
+                See Tomorrow in full with Pro
                 <ArrowRight className="h-3 w-3" />
               </button>
             </div>

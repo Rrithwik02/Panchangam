@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Lock, Code, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { Check, Code, Sparkles, ArrowRight } from "lucide-react";
 
 export function ProductTiersSection() {
   const scrollToTop = () => {
@@ -32,7 +33,7 @@ export function ProductTiersSection() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   Daily Core
                 </span>
-                <h3 className="text-2xl font-serif-title font-bold text-foreground">Basic</h3>
+                <h3 className="text-2xl font-serif-title font-bold text-foreground">Free</h3>
               </div>
 
               <div className="flex items-baseline gap-1">
@@ -49,7 +50,7 @@ export function ProductTiersSection() {
               <ul className="space-y-2.5 text-xs text-foreground/90">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Today&apos;s complete Tithi, Vara & Nakshatra</span>
+                  <span>Full Panchangam for Yesterday & Today</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
@@ -61,7 +62,7 @@ export function ProductTiersSection() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Real-time 3D celestial trajectory</span>
+                  <span>Tomorrow preview: Tithi, Nakshatra & festivals</span>
                 </li>
               </ul>
             </div>
@@ -87,7 +88,7 @@ export function ProductTiersSection() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-accent">
                   Full Explorer
                 </span>
-                <h3 className="text-2xl font-serif-title font-bold text-foreground">Premium</h3>
+                <h3 className="text-2xl font-serif-title font-bold text-foreground">Pro</h3>
               </div>
 
               <div className="flex items-baseline gap-1">
@@ -96,7 +97,7 @@ export function ProductTiersSection() {
               </div>
 
               <p className="text-xs text-muted leading-relaxed">
-                Unlock full past & future date exploration, festival calendar, and location search.
+                Explore 50 years of Panchangam, and see Tomorrow in full.
               </p>
 
               <hr className="border-border/60 my-4" />
@@ -104,33 +105,29 @@ export function ProductTiersSection() {
               <ul className="space-y-2.5 text-xs text-foreground/90">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <strong className="font-semibold">Full Yesterday, Today & Tomorrow access</strong>
+                  <span>Everything in Free</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Explore any historical or future date</span>
+                  <strong className="font-semibold">Tomorrow&apos;s complete Panchangam</strong>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Complete Festival Calendar & Vratas</span>
+                  <span>Explore any date from 2000 to 2047</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Tithi, Nakshatra, Yoga & Karana finder</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-accent shrink-0" />
-                  <span>Worldwide multi-location search</span>
+                  <span>Yoga, Karana, timings & festivals for every day</span>
                 </li>
               </ul>
             </div>
 
-            <button
-              onClick={() => alert("Premium subscription checkout coming soon!")}
-              className="w-full rounded-full bg-accent py-3 text-xs font-semibold text-white shadow-sm shadow-accent/20 transition-all hover:bg-accent-hover hover:scale-[1.01]"
+            <Link
+              href="/upgrade"
+              className="w-full rounded-full bg-accent py-3 text-center text-xs font-semibold text-white shadow-sm shadow-accent/20 transition-all hover:bg-accent-hover hover:scale-[1.01]"
             >
-              Upgrade to Premium
-            </button>
+              Upgrade to Pro
+            </Link>
           </div>
 
           {/* Card 3: API */}
