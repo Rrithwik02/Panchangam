@@ -12,8 +12,7 @@ const navLinks = [
   { href: "#todays-panchangam", label: "Today" },
   { href: "#sun-moon", label: "Sun & Moon" },
   { href: "#important-timings", label: "Timings" },
-  { href: "#product-tiers", label: "Premium" },
-  { href: "#product-tiers", label: "API" },
+  { href: "#premium", label: "Pricing" },
 ];
 
 interface NavbarProps {

@@ -10,8 +10,6 @@ interface PeriodGroupProps {
   accent?: "accent" | "gold";
 }
 
-const SEGMENT_COLORS = ["bg-accent", "bg-gold", "bg-accent/55", "bg-gold/55", "bg-accent/30", "bg-gold/30"];
-
 // "5:54 PM" -> "until 5:54 PM"; non-clock labels (e.g. "Spans to next day") pass through unchanged.
 function formatPeriodEndLabel(endTime: string): string {
   return /^\d/.test(endTime) ? `until ${endTime}` : endTime;
@@ -25,7 +23,12 @@ export function PeriodGroup({ label, entries, tier = "primary", accent = "accent
     ? "text-2xl sm:text-3xl lg:text-[2rem]"
     : "text-lg sm:text-xl";
   const accentTextClass = accent === "accent" ? "text-accent" : "text-gold";
-  const segments = entries.length > 1 ? buildPeriodSegments(entries) : null;
+
+  // The bar reads as "current period" (orange) vs. "rest of the day" (grey), so only the
+  // first (currently active) entry's share is ever filled — clamped so neither color can
+  // visually disappear at the extremes, without distorting the underlying proportion.
+  const rawFilledPercent = entries.length > 1 ? buildPeriodSegments(entries)[0].widthPercent : null;
+  const filledPercent = rawFilledPercent === null ? null : Math.min(96, Math.max(4, rawFilledPercent));
 
   return (
     <div className="space-y-3">
@@ -33,19 +36,13 @@ export function PeriodGroup({ label, entries, tier = "primary", accent = "accent
         {entries.length > 1 ? `${label}s` : label}
       </span>
 
-      {segments && (
+      {filledPercent !== null && (
         <div
-          className="flex h-1.5 w-full overflow-hidden rounded-full bg-border/50"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-muted/25"
           role="img"
           aria-label={`${label} periods across the day`}
         >
-          {segments.map((segment, index) => (
-            <div
-              key={`${segment.entry.name}-${index}`}
-              className={`${SEGMENT_COLORS[index % SEGMENT_COLORS.length]} h-full first:rounded-l-full last:rounded-r-full`}
-              style={{ flex: `${segment.widthPercent} 1 0%`, minWidth: "14px" }}
-            />
-          ))}
+          <div className="h-full rounded-full bg-accent" style={{ width: `${filledPercent}%` }} />
         </div>
       )}
 
