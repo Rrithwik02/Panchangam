@@ -89,51 +89,43 @@ test("/api/me reports a signed-out Free viewer", async () => {
   assert.match(res.headers.get("cache-control"), /no-store/);
 });
 
-test("Free: Yesterday and Today are full on the website endpoint", async () => {
-  for (const date of ["2026-08-13", "2026-08-14"]) {
-    const res = await get(`/api/web/panchangam/date?date=${date}&${tz}`);
-    const body = await res.json();
-    assert.equal(res.status, 200, date);
-    assert.equal(body.meta.access, "full", date);
-    assert.equal(body.data.date, date);
-  }
+test("explore page shows a sign-in prompt instead of the explorer when signed out", async () => {
+  const res = await get("/explore?date=2012-05-20");
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /Log in to explore 50 years of Panchangam/);
+  assert.match(html, /\/login\?next=%2Fexplore%3Fdate%3D2012-05-20/);
+  assert.doesNotMatch(html, /id="explore-date"/);
 });
 
-test("Free: Tomorrow is the existing preview (no Yoga/Karana/timings)", async () => {
-  for (const pathname of [`/api/web/panchangam/tomorrow?${tz}`, `/api/web/panchangam/date?date=2026-08-15&${tz}`]) {
-    const res = await get(pathname);
-    const body = await res.json();
-    assert.equal(res.status, 200, pathname);
-    assert.equal(body.meta.access, "preview", pathname);
-    assert.equal(body.data.access, "preview");
-    assert.equal(body.data.yogas, undefined);
-    assert.equal(body.data.sunrise, undefined);
-  }
-});
-
-test("Free: historical and future dates in range require Pro", async () => {
-  for (const date of ["2000-01-01", "2012-05-20", "2026-08-12", "2026-08-16", "2047-07-15"]) {
+test("signed out: the explorer data endpoint refuses every date, even Today", async () => {
+  // Yesterday, Today, Tomorrow, a historical date and an out-of-range date.
+  for (const date of ["2026-08-13", "2026-08-14", "2026-08-15", "2012-05-20", "1999-12-31"]) {
     const res = await get(`/api/web/panchangam/date?date=${date}&${tz}`);
     const body = await res.json();
-    assert.equal(res.status, 403, date);
-    assert.equal(body.error.code, "PRO_REQUIRED", date);
+    assert.equal(res.status, 401, date);
+    assert.equal(body.error.code, "UNAUTHENTICATED", date);
     assert.equal(body.data, undefined, date);
   }
 });
 
-test("Pro can't be faked with query params, headers or cookies", async () => {
-  const res = await get(`/api/web/panchangam/date?date=2012-05-20&${tz}&plan=pro&isPro=true`, {
-    headers: { cookie: "plan=pro; isPro=true", "x-plan": "pro" },
-  });
-  assert.equal(res.status, 403);
+test("signed out: home page Tomorrow is still the existing preview", async () => {
+  const res = await get(`/api/web/panchangam/tomorrow?${tz}`);
+  const body = await res.json();
+  assert.equal(res.status, 200);
+  assert.equal(body.meta.access, "preview");
+  assert.equal(body.data.yogas, undefined);
+  assert.equal(body.data.sunrise, undefined);
 });
 
-test("dates outside the dataset are rejected", async () => {
-  for (const date of ["1999-12-31", "2047-07-16"]) {
-    const res = await get(`/api/web/panchangam/date?date=${date}&${tz}`);
-    assert.equal(res.status, 404, date);
-    assert.equal((await res.json()).error.code, "DATE_OUT_OF_RANGE");
-  }
+test("access can't be faked with query params, headers or cookies", async () => {
+  const res = await get(`/api/web/panchangam/date?date=2012-05-20&${tz}&plan=pro&isPro=true`, {
+    headers: { cookie: "plan=pro; isPro=true; sb-access-token=fake", "x-plan": "pro" },
+  });
+  assert.equal(res.status, 401);
+});
+
+test("invalid dates are rejected", async () => {
   const bad = await get(`/api/web/panchangam/date?date=2026-13-40&${tz}`);
   assert.equal(bad.status, 400);
 });

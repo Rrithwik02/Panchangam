@@ -58,7 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
-    await supabase?.auth.signOut();
+    // "local": end only this browser's session. The default ("global") would
+    // also log the user out on every other device.
+    await supabase?.auth.signOut({ scope: "local" });
     setUser(null);
     setPlan(null);
     router.replace("/");
