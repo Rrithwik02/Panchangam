@@ -1,8 +1,10 @@
 "use client";
 
-import { MapPin, ArrowDown } from "lucide-react";
+import Link from "next/link";
+import { MapPin, ArrowDown, CalendarRange } from "lucide-react";
 import { CelestialHeroCanvas } from "@/components/celestial/CelestialHeroCanvas";
 import { formatLocationCity } from "@/lib/location";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 
 interface HeroSectionProps {
@@ -14,6 +16,7 @@ interface HeroSectionProps {
 export function HeroSection({ data, location, cityName }: HeroSectionProps) {
   const loc = location || { latitude: null, longitude: null, timezone: "Asia/Kolkata" };
   const city = formatLocationCity(loc, cityName);
+  const { plan } = useAuth();
 
   return (
     <section className="relative min-h-[460px] sm:min-h-[520px] flex flex-col justify-center items-center overflow-hidden px-4 py-16 sm:px-6 lg:px-8 text-center border-b border-border/60">
@@ -47,8 +50,8 @@ export function HeroSection({ data, location, cityName }: HeroSectionProps) {
           Daily astronomical calendar & celestial timings. Explore Tithi, Nakshatra, solar trajectory, and auspicious periods.
         </p>
 
-        {/* Single Primary CTA */}
-        <div className="pt-2">
+        {/* Primary CTA + secondary 50-year explorer (Pro) */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <a
             href="#todays-panchangam"
             className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-accent/20 transition-all hover:bg-accent-hover hover:scale-[1.02] active:scale-[0.98]"
@@ -56,6 +59,18 @@ export function HeroSection({ data, location, cityName }: HeroSectionProps) {
             <span>View Today&apos;s Panchangam</span>
             <ArrowDown className="h-4 w-4" />
           </a>
+          <Link
+            href="/explore"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card/85 px-6 py-3 text-sm font-semibold text-foreground shadow-xs backdrop-blur-md transition-all hover:border-accent/40 hover:bg-card hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <CalendarRange className="h-4 w-4 text-accent" />
+            <span>Explore 50 Years</span>
+            {plan !== "pro" && (
+              <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                Pro
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </section>
