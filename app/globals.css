@@ -42,6 +42,25 @@ html[data-theme="dark"] {
   --nav-bg: rgba(11, 13, 19, 0.92);
 }
 
+/* Native date pickers (calendar icon + popup) follow the day/night theme,
+   otherwise the icon stays black on the dark background. */
+html[data-theme="light"] input[type="date"] {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
