@@ -53,9 +53,13 @@ export function TodayPanchangamSection({
             <h2 className="text-3xl sm:text-4xl font-serif-title font-semibold text-foreground">
               {data.dateLabel}
             </h2>
-            <p className="text-sm text-muted">
-              {data.vara} · {data.paksha} Paksha
-            </p>
+            {/* Vara/Paksha move into the calendar-facts row below for Today/Yesterday;
+                Tomorrow's lighter preview doesn't get that row, so it's shown here instead. */}
+            {!fullData && (
+              <p className="text-sm text-muted">
+                {data.vara} · {data.paksha} Paksha
+              </p>
+            )}
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
@@ -123,14 +127,17 @@ export function TodayPanchangamSection({
             </div>
           )}
 
-          {/* Calendar era: Samvatsara, Masa, Ayana, Ritu. Today/Yesterday only —
-              not part of the lighter Tomorrow preview. */}
+          {/* Calendar facts: Samvatsara & Vara, then Ayana & Ritu, then Masa &
+              Paksha — same pairing as the reference panchangam layout.
+              Today/Yesterday only, not part of the lighter Tomorrow preview. */}
           {fullData && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
               <CalendarFact label="Samvatsara" value={fullData.samvatsara} />
-              <CalendarFact label="Masa" value={fullData.masa} />
+              <CalendarFact label="Vara" value={fullData.vara} />
               <CalendarFact label="Ayana" value={fullData.ayana} />
               <CalendarFact label="Ritu" value={fullData.ritu} />
+              <CalendarFact label="Masa" value={fullData.masa} />
+              <CalendarFact label="Paksha" value={fullData.paksha} />
             </div>
           )}
 
