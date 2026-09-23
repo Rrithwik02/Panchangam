@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TodayPanchangamSection } from "@/components/landing/TodayPanchangamSection";
 import { SunMoonSection } from "@/components/landing/SunMoonSection";
 import { ImportantTimingsSection } from "@/components/landing/ImportantTimingsSection";
-import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
+import { SignInGate, UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { getBrowserTimezone } from "@/lib/location";
 import { SUPPORTED_RANGE } from "@/lib/billing/plans";
 import type { PanchangamDay, PanchangamPreviewDay } from "@/lib/types/panchangam";
@@ -14,6 +14,7 @@ type LoadState =
   | { kind: "loading" }
   | { kind: "ready"; day: PanchangamDay | PanchangamPreviewDay }
   | { kind: "locked"; signedIn: boolean }
+  | { kind: "signin" }
   | { kind: "error"; message: string };
 
 function shift(date: string, days: number) {
@@ -47,6 +48,9 @@ export function DateExplorer({ initialDate }: { initialDate?: string }) {
 
       if (res.ok && body?.success) {
         setState({ kind: "ready", day: body.data });
+      } else if (body?.error?.code === "UNAUTHENTICATED") {
+        // Session ended while the page was open (e.g. logged out in another tab).
+        setState({ kind: "signin" });
       } else if (body?.error?.code === "PRO_REQUIRED") {
         setState({ kind: "locked", signedIn: Boolean(body.meta?.signed_in) });
       } else {
@@ -138,6 +142,12 @@ export function DateExplorer({ initialDate }: { initialDate?: string }) {
       {state.kind === "locked" && (
         <div className="mx-auto max-w-xl px-4 py-12">
           <UpgradePrompt signedIn={state.signedIn} />
+        </div>
+      )}
+
+      {state.kind === "signin" && (
+        <div className="mx-auto max-w-xl px-4 py-12">
+          <SignInGate next={date ? `/explore?date=${date}` : "/explore"} />
         </div>
       )}
 

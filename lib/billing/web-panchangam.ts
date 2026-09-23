@@ -12,7 +12,11 @@ import { jsonError, PRIVATE_NO_STORE } from "@/lib/auth/request";
  * locked from the viewer's subscription in the database. Reuses the existing
  * Panchangam service and data unchanged.
  */
-export async function getWebPanchangamForDate(url: URL, date: string) {
+export async function getWebPanchangamForDate(
+  url: URL,
+  date: string,
+  options: { requireSignIn?: boolean } = {}
+) {
   const locationResult = normalizeLocation({
     latitude: url.searchParams.get("latitude"),
     longitude: url.searchParams.get("longitude"),
@@ -22,6 +26,12 @@ export async function getWebPanchangamForDate(url: URL, date: string) {
 
   const location = locationResult.location;
   const { isPro, viewer } = await getEntitlement();
+
+  // The date explorer is for signed-in members only, whatever the date.
+  if (options.requireSignIn && !viewer) {
+    return jsonError("UNAUTHENTICATED", "Please log in to explore the Panchangam.", 401);
+  }
+
   const access = resolveDateAccess(date, location.timezone, isPro);
 
   if (access === "out_of_range") {
