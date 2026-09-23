@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npm run build && node --test tests/api-contract.test.mjs"
+    "test": "npm run build && node --test tests/api-contract.test.mjs tests/auth-access.test.mjs && node --experimental-strip-types --test tests/pro-access.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

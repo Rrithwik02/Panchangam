@@ -48,10 +48,10 @@ export function SunMoonSection({ data }: SunMoonSectionProps) {
             className="cursor-pointer rounded-2xl border border-dashed border-border bg-card-muted/40 p-6 text-center transition-all hover:border-accent/40 space-y-1.5"
           >
             <p className="text-sm font-semibold text-foreground/80">
-              Solar &amp; lunar timings become available once tomorrow arrives
+              Tomorrow&apos;s solar &amp; lunar timings are included with Pro
             </p>
             <button className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
-              Unlock every future date with Premium
+              See Tomorrow in full with Pro
               <ArrowRight className="h-3 w-3" />
             </button>
           </div>
