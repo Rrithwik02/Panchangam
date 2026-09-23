@@ -40,7 +40,6 @@ export function TodayPanchangamSection({
   const nakshatras = data.nakshatras ?? [];
   const yogas = fullData?.yogas ?? [];
   const karanas = fullData?.karanas ?? [];
-  const vratas = fullData?.vratas ?? [];
 
   return (
     <section id="todays-panchangam" className="py-16 sm:py-20 border-b border-border/60">
@@ -54,9 +53,13 @@ export function TodayPanchangamSection({
             <h2 className="text-3xl sm:text-4xl font-serif-title font-semibold text-foreground">
               {data.dateLabel}
             </h2>
-            <p className="text-sm text-muted">
-              {data.vara} · {data.paksha} Paksha
-            </p>
+            {/* Vara/Paksha move into the calendar-facts row below for Today/Yesterday;
+                Tomorrow's lighter preview doesn't get that row, so it's shown here instead. */}
+            {!fullData && (
+              <p className="text-sm text-muted">
+                {data.vara} · {data.paksha} Paksha
+              </p>
+            )}
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
@@ -101,29 +104,17 @@ export function TodayPanchangamSection({
           </div>
         )}
 
-        {/* Festival / Vrata Ribbon */}
-        {((data.festivals && data.festivals.length > 0) || vratas.length > 0) && (
+        {/* Festival Ribbon */}
+        {data.festivals && data.festivals.length > 0 && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-foreground">
             <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-            <div className="space-y-1.5">
-              {data.festivals && data.festivals.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                    {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
-                  </span>
-                  <p className="text-base font-serif-title font-semibold">
-                    {data.festivals.join(" · ")}
-                  </p>
-                </div>
-              )}
-              {vratas.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    {vratas.length > 1 ? "Vratas" : "Vrata"}
-                  </span>
-                  <p className="text-sm text-foreground/90">{vratas.join(" · ")}</p>
-                </div>
-              )}
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
+              </span>
+              <p className="text-base font-serif-title font-semibold">
+                {data.festivals.join(" · ")}
+              </p>
             </div>
           </div>
         )}
@@ -136,8 +127,26 @@ export function TodayPanchangamSection({
             </div>
           )}
 
+          {/* Calendar facts: Samvatsara & Vara, then Ayana & Ritu, then Masa &
+              Paksha — same pairing as the reference panchangam layout.
+              Today/Yesterday only, not part of the lighter Tomorrow preview. */}
+          {fullData && (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <CalendarFact label="Samvatsara" value={fullData.samvatsara} />
+              <CalendarFact label="Vara" value={fullData.vara} />
+              <CalendarFact label="Ayana" value={fullData.ayana} />
+              <CalendarFact label="Ritu" value={fullData.ritu} />
+              <CalendarFact label="Masa" value={fullData.masa} />
+              <CalendarFact label="Paksha" value={fullData.paksha} />
+            </div>
+          )}
+
           {/* Primary tier: Tithi & Nakshatra — always shown, every returned period rendered. */}
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div
+            className={`grid gap-6 sm:grid-cols-2 ${
+              fullData ? "border-t border-border/60 pt-6" : ""
+            }`}
+          >
             <PeriodGroup label="Tithi" entries={tithis} tier="primary" accent="accent" />
             <PeriodGroup label="Nakshatra" entries={nakshatras} tier="primary" accent="gold" />
           </div>
@@ -166,5 +175,16 @@ export function TodayPanchangamSection({
         </div>
       </div>
     </section>
+  );
+}
+
+function CalendarFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <span className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</span>
+      <p className="text-lg sm:text-xl font-serif-title font-bold text-foreground leading-tight break-words">
+        {value}
+      </p>
+    </div>
   );
 }

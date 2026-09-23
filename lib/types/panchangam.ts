@@ -32,6 +32,14 @@ export interface PanchangamDay {
   yogas: PanchangamPeriodEntry[];
   /** All Karana periods for the day, in order. Length varies day to day. */
   karanas: PanchangamPeriodEntry[];
+  /** Samvatsara (year name), e.g. "Parabhava (2026)". */
+  samvatsara: string;
+  /** Lunar month, e.g. "Bhadrapada". */
+  masa: string;
+  /** Solar half-year, e.g. "Dakshinayana". */
+  ayana: string;
+  /** Season, e.g. "Varsha". */
+  ritu: string;
   location: string;
   sunrise: string;
   sunset: string;
@@ -40,11 +48,22 @@ export interface PanchangamDay {
   rahuKalam: TimingRange;
   yamagandam: TimingRange;
   gulikaKalam: TimingRange;
-  durmuhurtham: TimingRange;
-  varjyam: TimingRange;
-  amritaKalam: TimingRange;
+  brahmaMuhurtham: TimingRange;
   abhijitMuhurtham: TimingRange;
+  /** Primary (first) Durmuhurtham period — kept for callers that only need a single value. */
+  durmuhurtham: TimingRange;
+  /** Primary (first) Varjyam period — kept for callers that only need a single value. */
+  varjyam: TimingRange;
+  /** Primary (first) Amrita Kalam period — kept for callers that only need a single value. */
+  amritaKalam: TimingRange;
+  /** All Durmuhurtham periods for the day. A day can have more than one. */
+  durmuhurthams: TimingRange[];
+  /** All Varjyam periods for the day. A day can have more than one. */
+  varjyams: TimingRange[];
+  /** All Amrita Kalam periods for the day. A day can have more than one. */
+  amritaKalams: TimingRange[];
   festivals: string[];
+  /** Not currently populated by the data source — always empty. */
   vratas: string[];
 }
 
