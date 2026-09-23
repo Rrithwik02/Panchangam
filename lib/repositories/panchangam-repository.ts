@@ -94,6 +94,34 @@ function pickRange(
   return fallback;
 }
 
+// Some timing fields (Durmuhurtham, Varjyam, Amrita Kalam) can also have more
+// than one period per day, numbered the same way (durmuhurtam1, durmuhurtam2,
+// ...). Tries each candidate base name and returns whichever one actually has
+// data, scanning until a gap is found rather than assuming a fixed count.
+function collectRangeEntries(
+  row: SupabaseRow,
+  candidateBases: string[],
+  label: string
+): TimingRange[] {
+  for (const base of candidateBases) {
+    const entries: TimingRange[] = [];
+
+    for (let index = 1; index <= MAX_PERIOD_ENTRIES; index++) {
+      const raw = row[`${base}${index}`];
+      if (typeof raw !== "string" || !raw.trim()) break;
+
+      const parsed = parseRangeString(raw.trim());
+      if (!parsed) break;
+
+      entries.push({ label, ...parsed });
+    }
+
+    if (entries.length > 0) return entries;
+  }
+
+  return [];
+}
+
 function pick(row: SupabaseRow, candidates: string[], fallback: string) {
   for (const key of candidates) {
     const value = row[key];
@@ -160,6 +188,14 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
   const resolvedYogas = yogas.length > 0 ? yogas : todaysPanchangam.yogas;
   const resolvedKaranas = karanas.length > 0 ? karanas : todaysPanchangam.karanas;
 
+  const durmuhurthams = collectRangeEntries(row, ["durmuhurtam", "durmuhurtham"], "Durmuhurtham");
+  const varjyams = collectRangeEntries(row, ["varjyam"], "Varjyam");
+  const amritaKalams = collectRangeEntries(row, ["amruta_ghadiya", "amrita_kalam"], "Amrita Kalam");
+
+  const resolvedDurmuhurthams = durmuhurthams.length > 0 ? durmuhurthams : todaysPanchangam.durmuhurthams;
+  const resolvedVarjyams = varjyams.length > 0 ? varjyams : todaysPanchangam.varjyams;
+  const resolvedAmritaKalams = amritaKalams.length > 0 ? amritaKalams : todaysPanchangam.amritaKalams;
+
   return {
     date: rowDate,
     dateLabel: asString(row.date_label, derivedLabel),
@@ -174,6 +210,10 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
     nakshatras: resolvedNakshatras,
     yogas: resolvedYogas,
     karanas: resolvedKaranas,
+    samvatsara: pick(row, ["samvatsara"], todaysPanchangam.samvatsara),
+    masa: pick(row, ["masa", "lunar_month", "month_name"], todaysPanchangam.masa),
+    ayana: pick(row, ["ayana"], todaysPanchangam.ayana),
+    ritu: pick(row, ["ritu", "season"], todaysPanchangam.ritu),
     location: pick(row, ["location", "location_name", "timezone"], todaysPanchangam.location),
     sunrise: formatClockTime(asString(row.sunrise, todaysPanchangam.sunrise)),
     sunset: formatClockTime(asString(row.sunset, todaysPanchangam.sunset)),
@@ -187,18 +227,11 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
       "Gulika Kalam",
       todaysPanchangam.gulikaKalam
     ),
-    durmuhurtham: pickRange(
+    brahmaMuhurtham: pickRange(
       row,
-      ["durmuhurtam1", "durmuhurtham1", "durmuhurtham"],
-      "Durmuhurtham",
-      todaysPanchangam.durmuhurtham
-    ),
-    varjyam: pickRange(row, ["varjyam1", "varjyam"], "Varjyam", todaysPanchangam.varjyam),
-    amritaKalam: pickRange(
-      row,
-      ["amruta_ghadiya1", "amrita_kalam"],
-      "Amrita Kalam",
-      todaysPanchangam.amritaKalam
+      ["brahma_muhurtam", "brahma_muhurtham"],
+      "Brahma Muhurtham",
+      todaysPanchangam.brahmaMuhurtham
     ),
     abhijitMuhurtham: pickRange(
       row,
@@ -206,6 +239,13 @@ function mapSupabaseRowToDay(row: SupabaseRow): PanchangamDay {
       "Abhijit Muhurtham",
       todaysPanchangam.abhijitMuhurtham
     ),
+    // Primary (first) period, kept for callers that only need a single value.
+    durmuhurtham: resolvedDurmuhurthams[0] ?? todaysPanchangam.durmuhurtham,
+    varjyam: resolvedVarjyams[0] ?? todaysPanchangam.varjyam,
+    amritaKalam: resolvedAmritaKalams[0] ?? todaysPanchangam.amritaKalam,
+    durmuhurthams: resolvedDurmuhurthams,
+    varjyams: resolvedVarjyams,
+    amritaKalams: resolvedAmritaKalams,
     festivals: asArrayOfStrings(row.festivals ?? row.festival_occasion, []),
     vratas: asArrayOfStrings(row.vratas, []),
   };

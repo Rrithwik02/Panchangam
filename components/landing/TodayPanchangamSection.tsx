@@ -40,7 +40,6 @@ export function TodayPanchangamSection({
   const nakshatras = data.nakshatras ?? [];
   const yogas = fullData?.yogas ?? [];
   const karanas = fullData?.karanas ?? [];
-  const vratas = fullData?.vratas ?? [];
 
   return (
     <section id="todays-panchangam" className="py-16 sm:py-20 border-b border-border/60">
@@ -57,6 +56,12 @@ export function TodayPanchangamSection({
             <p className="text-sm text-muted">
               {data.vara} · {data.paksha} Paksha
             </p>
+            {fullData && (
+              <p className="text-xs text-muted/80">
+                {fullData.samvatsara} Samvatsara · {fullData.ayana} · {fullData.ritu} Ritu ·{" "}
+                {fullData.masa} Masa
+              </p>
+            )}
           </div>
 
           {/* Date Switcher: [ Yesterday ] [ Today ] [ Tomorrow ] */}
@@ -101,29 +106,17 @@ export function TodayPanchangamSection({
           </div>
         )}
 
-        {/* Festival / Vrata Ribbon */}
-        {((data.festivals && data.festivals.length > 0) || vratas.length > 0) && (
+        {/* Festival Ribbon */}
+        {data.festivals && data.festivals.length > 0 && (
           <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/10 px-5 py-3.5 text-foreground">
             <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-            <div className="space-y-1.5">
-              {data.festivals && data.festivals.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-accent">
-                    {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
-                  </span>
-                  <p className="text-base font-serif-title font-semibold">
-                    {data.festivals.join(" · ")}
-                  </p>
-                </div>
-              )}
-              {vratas.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-                    {vratas.length > 1 ? "Vratas" : "Vrata"}
-                  </span>
-                  <p className="text-sm text-foreground/90">{vratas.join(" · ")}</p>
-                </div>
-              )}
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                {data.festivals.length > 1 ? "Festivals of the Day" : "Festival of the Day"}
+              </span>
+              <p className="text-base font-serif-title font-semibold">
+                {data.festivals.join(" · ")}
+              </p>
             </div>
           </div>
         )}

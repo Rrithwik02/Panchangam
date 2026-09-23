@@ -54,10 +54,11 @@ export function ImportantTimingsSection({ data }: ImportantTimingsSectionProps) 
               </div>
 
               <div className="space-y-2">
-                {fullData?.rahuKalam && <TimingItem label="Rahu Kalam" range={fullData.rahuKalam} />}
-                {fullData?.yamagandam && <TimingItem label="Yamagandam" range={fullData.yamagandam} />}
-                {fullData?.gulikaKalam && <TimingItem label="Gulika Kalam" range={fullData.gulikaKalam} />}
-                {fullData?.durmuhurtham && <TimingItem label="Durmuhurtham" range={fullData.durmuhurtham} />}
+                <TimingItem label="Durmuhurtham" ranges={fullData?.durmuhurthams ?? []} />
+                {fullData?.rahuKalam && <TimingItem label="Rahu Kalam" ranges={[fullData.rahuKalam]} />}
+                {fullData?.yamagandam && <TimingItem label="Yamagandam" ranges={[fullData.yamagandam]} />}
+                {fullData?.gulikaKalam && <TimingItem label="Gulika Kalam" ranges={[fullData.gulikaKalam]} />}
+                <TimingItem label="Varjyam" ranges={fullData?.varjyams ?? []} />
               </div>
             </div>
 
@@ -69,11 +70,13 @@ export function ImportantTimingsSection({ data }: ImportantTimingsSectionProps) 
               </div>
 
               <div className="space-y-2">
-                {fullData?.abhijitMuhurtham && (
-                  <TimingItem label="Abhijit Muhurtham" range={fullData.abhijitMuhurtham} tone="gold" />
+                {fullData?.brahmaMuhurtham && (
+                  <TimingItem label="Brahma Muhurtham" ranges={[fullData.brahmaMuhurtham]} tone="gold" />
                 )}
-                {fullData?.amritaKalam && <TimingItem label="Amrita Kalam" range={fullData.amritaKalam} tone="gold" />}
-                {fullData?.varjyam && <TimingItem label="Varjyam" range={fullData.varjyam} tone="gold" />}
+                <TimingItem label="Amrita Kalam" ranges={fullData?.amritaKalams ?? []} tone="gold" />
+                {fullData?.abhijitMuhurtham && (
+                  <TimingItem label="Abhijit Muhurtham" ranges={[fullData.abhijitMuhurtham]} tone="gold" />
+                )}
               </div>
             </div>
           </div>
@@ -83,24 +86,37 @@ export function ImportantTimingsSection({ data }: ImportantTimingsSectionProps) 
   );
 }
 
+// A day can carry more than one period for some fields (e.g. two Durmuhurtham
+// windows). Renders the label once and every period underneath it.
 function TimingItem({
   label,
-  range,
+  ranges,
   tone = "accent",
 }: {
   label: string;
-  range: TimingRange;
+  ranges: TimingRange[];
   tone?: "accent" | "gold";
 }) {
+  if (ranges.length === 0) return null;
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-xs text-foreground border-b border-border/40 last:border-b-0">
-      <span className="font-medium text-foreground/80 flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${tone === "accent" ? "bg-accent" : "bg-gold"}`} />
-        {label}
-      </span>
-      <span className="font-semibold tabular-nums text-foreground shrink-0">
-        {range.start} – {range.end}
-      </span>
+    <div className="rounded-lg px-3 py-2.5 text-xs text-foreground border-b border-border/40 last:border-b-0">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-medium text-foreground/80 flex items-center gap-2">
+          <span className={`h-1.5 w-1.5 rounded-full ${tone === "accent" ? "bg-accent" : "bg-gold"}`} />
+          {label}
+        </span>
+        <span className="font-semibold tabular-nums text-foreground shrink-0">
+          {ranges[0].start} – {ranges[0].end}
+        </span>
+      </div>
+      {ranges.slice(1).map((range, index) => (
+        <div key={index} className="flex justify-end pt-1">
+          <span className="font-semibold tabular-nums text-foreground/70 text-xs shrink-0">
+            {range.start} – {range.end}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
