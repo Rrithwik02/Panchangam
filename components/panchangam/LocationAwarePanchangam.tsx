@@ -42,7 +42,7 @@ export function LocationAwarePanchangam({
         timezone,
       });
 
-      const response = await fetch(`/api/v1/panchangam/date?${params.toString()}`, {
+      const response = await fetch(`/api/web/panchangam/date?${params.toString()}`, {
         cache: "no-store",
       });
 
@@ -159,7 +159,7 @@ export function LocationAwarePanchangam({
         <p className="mt-2 text-sm text-muted">{message}</p>
         <p className="mt-1 text-xs text-muted/80">
           This build sends latitude, longitude, and timezone to
-          `/api/v1/panchangam/date`, but the current dataset is still reference
+          `/api/web/panchangam/date`, but the current dataset is still reference
           Panchangam data rather than a live astronomical engine.
         </p>
         {(status === "denied" || status === "error" || status === "unavailable") && (

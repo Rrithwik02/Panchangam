@@ -1,6 +1,13 @@
 import "server-only";
 
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseAdminClient, isSupabaseUrlConfigured } from "@/lib/supabase/admin";
+import {
+  isDatabaseCircuitOpen,
+  recordDatabaseFailure,
+  recordDatabaseSuccess,
+} from "@/lib/supabase/circuit-breaker";
+import { MemoryCache, type CacheStatus } from "@/lib/cache/memory-cache";
+import { getApiConfig } from "@/lib/api-access/config";
 import { todaysPanchangam } from "@/lib/mock-panchangam";
 import { formatDateLabel, getWeekdayNameForDate } from "@/lib/api/panchangam";
 import type { PanchangamDay, PanchangamPeriodEntry, TimingRange } from "@/lib/types/panchangam";
@@ -24,11 +31,14 @@ export interface PanchangamDateLookupResult {
   day?: PanchangamDay;
   source?: PanchangamDataSource;
   error?: PanchangamRepositoryError;
+  /** How the server-side cache answered; "none" when no cache was involved. */
+  cache?: CacheStatus | "none";
 }
 
 export interface PanchangamRangeLookupResult {
   items?: PanchangamRecordResult[];
   error?: PanchangamRepositoryError;
+  cache?: CacheStatus | "none";
 }
 
 function asString(value: unknown, fallback = "") {
@@ -267,27 +277,69 @@ function getQueryClient() {
   return getSupabaseAdminClient();
 }
 
-export async function fetchPanchangamByDate(date: string): Promise<PanchangamDateLookupResult> {
+// Only the columns mapSupabaseRowToDay reads — never SELECT *.
+const PANCHANGAM_COLUMNS = [
+  "date", "vara", "samvatsara", "masa", "ritu", "ayana",
+  "sunrise", "sunset", "moonrise", "moonset",
+  "tithi1_name", "tithi1_paksha", "tithi1_end_time", "tithi2_name", "tithi2_paksha", "tithi2_end_time",
+  "nakshatra1_name", "nakshatra1_end_time", "nakshatra2_name", "nakshatra2_end_time",
+  "yoga1_name", "yoga1_end_time", "yoga2_name", "yoga2_end_time",
+  "karana1_name", "karana2_name",
+  "rahukalam", "yamagandam", "gulikakalam", "brahma_muhurtam", "abhijit_muhurtam",
+  "durmuhurtam1", "durmuhurtam2", "varjyam1", "varjyam2", "amruta_ghadiya1", "amruta_ghadiya2",
+  "festival_occasion",
+].join(",");
+
+// A range is never larger than the API's maximum span; this is a backstop.
+const MAX_RANGE_ROWS = 366;
+
+const UNAVAILABLE: PanchangamRepositoryError = {
+  code: "SUPABASE_ERROR",
+  message: "Panchangam data is temporarily unavailable.",
+  status: 503,
+};
+
+// Panchangam rows don't depend on the caller's location (location only shapes
+// the response label), so the date alone is a complete cache key.
+const cacheConfig = getApiConfig();
+const dateCache = new MemoryCache<PanchangamDateLookupResult>(
+  cacheConfig.cacheTtlSeconds * 1000,
+  cacheConfig.cacheMaxEntries
+);
+const rangeCache = new MemoryCache<PanchangamRangeLookupResult>(
+  cacheConfig.cacheTtlSeconds * 1000,
+  Math.max(10, Math.floor(cacheConfig.cacheMaxEntries / 10))
+);
+
+export function getPanchangamCacheStats() {
+  return { date: dateCache.getStats(), range: rangeCache.getStats() };
+}
+
+export function clearPanchangamCacheForTests() {
+  dateCache.clear();
+  rangeCache.clear();
+}
+
+function dbSignal() {
+  return AbortSignal.timeout(getApiConfig().dbTimeoutMs);
+}
+
+async function queryDate(date: string): Promise<PanchangamDateLookupResult> {
   const client = getQueryClient();
-  if (!client) {
-    return { day: cloneReferenceDayForDate(date), source: "reference" };
-  }
+  if (!client) return { error: UNAVAILABLE };
 
   const { data, error } = await client
     .from("daily_panchangam")
-    .select("*")
+    .select(PANCHANGAM_COLUMNS)
     .eq("date", date)
+    .abortSignal(dbSignal())
     .maybeSingle();
 
   if (error) {
-    return {
-      error: {
-        code: "SUPABASE_ERROR",
-        message: "Unable to read Panchangam data from Supabase.",
-        status: 502,
-      },
-    };
+    recordDatabaseFailure();
+    return { error: UNAVAILABLE };
   }
+  recordDatabaseSuccess();
 
   if (!data) {
     return {
@@ -299,36 +351,27 @@ export async function fetchPanchangamByDate(date: string): Promise<PanchangamDat
     };
   }
 
-  return { day: mapSupabaseRowToDay(data), source: "supabase" };
+  return { day: mapSupabaseRowToDay(data as unknown as SupabaseRow), source: "supabase" };
 }
 
-export async function fetchPanchangamByRange(
-  startDate: string,
-  endDate: string
-): Promise<PanchangamRangeLookupResult> {
+async function queryRange(startDate: string, endDate: string): Promise<PanchangamRangeLookupResult> {
   const client = getQueryClient();
-  if (!client) {
-    return {
-      items: dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" })),
-    };
-  }
+  if (!client) return { error: UNAVAILABLE };
 
   const { data, error } = await client
     .from("daily_panchangam")
-    .select("*")
+    .select(PANCHANGAM_COLUMNS)
     .gte("date", startDate)
     .lte("date", endDate)
-    .order("date", { ascending: true });
+    .order("date", { ascending: true })
+    .limit(MAX_RANGE_ROWS)
+    .abortSignal(dbSignal());
 
   if (error) {
-    return {
-      error: {
-        code: "SUPABASE_ERROR",
-        message: "Unable to read Panchangam data from Supabase.",
-        status: 502,
-      },
-    };
+    recordDatabaseFailure();
+    return { error: UNAVAILABLE };
   }
+  recordDatabaseSuccess();
 
   if (!data || data.length === 0) {
     return {
@@ -340,9 +383,58 @@ export async function fetchPanchangamByRange(
     };
   }
 
-  return {
-    items: data.map((row) => ({ day: mapSupabaseRowToDay(row), source: "supabase" as const })),
-  };
+  const items = (data as unknown as SupabaseRow[]).map((row) => ({
+    day: mapSupabaseRowToDay(row),
+    source: "supabase" as const,
+  }));
+  // Seed single-date entries so later lookups inside this range are hits.
+  for (const item of items) {
+    dateCache.set(`panchangam:date:${item.day.date}`, { day: item.day, source: "supabase" });
+  }
+  return { items };
+}
+
+/**
+ * Without any Supabase URL (local development and the contract tests) the
+ * repository serves the reference day. With a URL but no server key it
+ * reports "unavailable" rather than quietly passing reference data off as real.
+ */
+function shouldServeReferenceData() {
+  return !getQueryClient() && !isSupabaseUrlConfigured();
+}
+
+export async function fetchPanchangamByDate(date: string): Promise<PanchangamDateLookupResult> {
+  if (shouldServeReferenceData()) {
+    return { day: cloneReferenceDayForDate(date), source: "reference", cache: "none" };
+  }
+  if (isDatabaseCircuitOpen()) return { error: UNAVAILABLE, cache: "none" };
+
+  const { value, status } = await dateCache.getOrLoad(
+    `panchangam:date:${date}`,
+    () => queryDate(date),
+    (result) => Boolean(result.day)
+  );
+  return { ...value, cache: status };
+}
+
+export async function fetchPanchangamByRange(
+  startDate: string,
+  endDate: string
+): Promise<PanchangamRangeLookupResult> {
+  if (shouldServeReferenceData()) {
+    return {
+      items: dateRangeFallback(startDate, endDate).map((day) => ({ day, source: "reference" })),
+      cache: "none",
+    };
+  }
+  if (isDatabaseCircuitOpen()) return { error: UNAVAILABLE, cache: "none" };
+
+  const { value, status } = await rangeCache.getOrLoad(
+    `panchangam:range:${startDate}:${endDate}`,
+    () => queryRange(startDate, endDate),
+    (result) => Boolean(result.items)
+  );
+  return { ...value, cache: status };
 }
 
 export async function fetchPanchangamByMonth(

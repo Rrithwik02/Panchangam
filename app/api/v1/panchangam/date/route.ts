@@ -1,42 +1,9 @@
-import { normalizeLocation, parseStrictDate } from "@/lib/api/panchangam";
-import { getPanchangamDateResponse } from "@/lib/services/panchangam-service";
+import { apiRoute } from "@/lib/api-access";
+import { panchangamDate } from "@/lib/api-access/endpoints";
 
+// Paid API: API key + active API subscription, rate/burst/concurrency limits
+// and monthly quota are enforced in lib/api-access before any data is read.
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const maxDuration = 10;
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const date = url.searchParams.get("date");
-
-  if (!date) {
-    return Response.json(
-      {
-        success: false,
-        error: { code: "INVALID_DATE", message: "The date query parameter is required." },
-      },
-      { status: 400 }
-    );
-  }
-
-  if (!parseStrictDate(date)) {
-    return Response.json(
-      {
-        success: false,
-        error: { code: "INVALID_DATE", message: "The supplied date is not valid." },
-      },
-      { status: 400 }
-    );
-  }
-
-  const locationResult = normalizeLocation({
-    latitude: url.searchParams.get("latitude"),
-    longitude: url.searchParams.get("longitude"),
-    timezone: url.searchParams.get("timezone"),
-  });
-
-  if (locationResult.error) {
-    return locationResult.error;
-  }
-
-  return getPanchangamDateResponse(date, locationResult.location);
-}
+export const GET = apiRoute(panchangamDate);

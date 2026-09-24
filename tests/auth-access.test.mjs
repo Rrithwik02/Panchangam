@@ -169,9 +169,9 @@ test("Razorpay webhook accepts a correctly signed event", async () => {
   assert.deepEqual(await res.json(), { ok: true, handled: false });
 });
 
-test("existing public v1 API is unchanged", async () => {
-  const tomorrow = await (await get(`/api/v1/panchangam/tomorrow?${tz}`)).json();
-  assert.equal(tomorrow.meta.access, "preview");
+test("the v1 API is no longer a free, keyless way around Pro", async () => {
   const past = await get(`/api/v1/panchangam/date?date=2012-05-20&${tz}`);
-  assert.notEqual(past.status, 403);
+  assert.equal(past.status, 401);
+  const range = await get(`/api/v1/panchangam/range?start_date=2000-01-01&end_date=2047-07-15&${tz}`);
+  assert.equal(range.status, 401);
 });

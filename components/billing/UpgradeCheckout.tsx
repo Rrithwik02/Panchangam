@@ -7,7 +7,13 @@ import { FormMessage } from "@/components/auth/AuthUI";
 
 type Checkout = { provider: "mock" | "razorpay"; checkoutId: string; amountInr: number };
 
-export function UpgradeCheckout() {
+const PRODUCTS = {
+  pro: { label: "Pro", cta: "Upgrade to Pro — ₹300/month", done: "/account?upgraded=1", manage: "/account/subscription" },
+  api: { label: "API", cta: "Subscribe to the API — ₹600/month", done: "/account/api?subscribed=1", manage: "/account/api" },
+} as const;
+
+export function UpgradeCheckout({ product = "pro" }: { product?: "pro" | "api" }) {
+  const info = PRODUCTS[product];
   const router = useRouter();
   const { refreshPlan } = useAuth();
   const [checkout, setCheckout] = useState<Checkout | null>(null);
@@ -18,11 +24,15 @@ export function UpgradeCheckout() {
     setPending("start");
     setError(null);
     try {
-      const res = await fetch("/api/billing/checkout", { method: "POST" });
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: product }),
+      });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.success) {
-        if (body?.error?.code === "ALREADY_PRO") {
-          router.replace("/account/subscription");
+        if (body?.error?.code === "ALREADY_PRO" || body?.error?.code === "ALREADY_SUBSCRIBED") {
+          router.replace(info.manage);
           return;
         }
         setError(body?.error?.message ?? "We couldn't start the payment. Please try again.");
@@ -41,11 +51,11 @@ export function UpgradeCheckout() {
     setPending("pay");
     setError(null);
     try {
-      // The server records the payment and activates Pro; this page never does.
+      // The server records the payment and activates the plan; this page never does.
       const res = await fetch("/api/billing/mock-confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkoutId: checkout.checkoutId }),
+        body: JSON.stringify({ checkoutId: checkout.checkoutId, plan: product }),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.success) {
@@ -53,7 +63,7 @@ export function UpgradeCheckout() {
         return;
       }
       await refreshPlan();
-      router.replace("/account?upgraded=1");
+      router.replace(info.done);
       router.refresh();
     } catch {
       setError("Network error — your payment was not completed. Please try again.");
@@ -73,7 +83,7 @@ export function UpgradeCheckout() {
           disabled={pending !== null}
           className="w-full min-h-[46px] rounded-full bg-accent px-6 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-accent-hover disabled:opacity-60"
         >
-          {pending === "start" ? "Starting checkout…" : "Upgrade to Pro — ₹300/month"}
+          {pending === "start" ? "Starting checkout…" : info.cta}
         </button>
       ) : (
         <div className="space-y-4 rounded-xl border border-dashed border-accent/40 bg-accent/5 p-5">
@@ -84,7 +94,7 @@ export function UpgradeCheckout() {
             </p>
           </div>
           <div className="flex items-baseline justify-between border-t border-border/60 pt-3 text-sm">
-            <span className="text-muted">Pro · monthly</span>
+            <span className="text-muted">{info.label} · monthly</span>
             <span className="font-semibold">₹{checkout.amountInr}.00</span>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">

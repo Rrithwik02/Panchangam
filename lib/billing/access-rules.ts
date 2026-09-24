@@ -7,18 +7,38 @@ export interface SubscriptionAccessFields {
 }
 
 /**
- * PRO access comes only from the subscriptions row in the database:
- * - plan = pro and status = active (and not past its period end), or
- * - plan = pro and status = cancelled but still inside the paid period.
- * Never from client state, localStorage, URL parameters or hidden UI.
+ * Shared paid-access rule (mirrored by public.api_is_entitled in SQL):
+ * - status = active, not past its period end (or open-ended), or
+ * - status = cancelled, but still inside the paid period.
+ * expired / payment_failed never have access.
+ */
+export function isPaidPeriodActive(
+  status: SubscriptionStatus,
+  currentPeriodEnd: string | null,
+  now = new Date()
+) {
+  const periodEnd = currentPeriodEnd ? new Date(currentPeriodEnd) : null;
+  const withinPeriod = periodEnd ? periodEnd.getTime() > now.getTime() : false;
+
+  if (status === "active") return periodEnd ? withinPeriod : true;
+  if (status === "cancelled") return withinPeriod;
+  return false;
+}
+
+/**
+ * PRO access comes only from the subscriptions row in the database — never
+ * from client state, localStorage, URL parameters or hidden UI.
  */
 export function hasProAccess(sub: SubscriptionAccessFields | null, now = new Date()) {
   if (!sub || sub.plan !== "pro") return false;
+  return isPaidPeriodActive(sub.status, sub.current_period_end, now);
+}
 
-  const periodEnd = sub.current_period_end ? new Date(sub.current_period_end) : null;
-  const withinPeriod = periodEnd ? periodEnd.getTime() > now.getTime() : false;
-
-  if (sub.status === "active") return periodEnd ? withinPeriod : true;
-  if (sub.status === "cancelled") return withinPeriod;
-  return false;
+/** API access comes only from the api_subscriptions row (Pro does not include it). */
+export function hasApiAccess(
+  sub: { status: SubscriptionStatus; current_period_end: string | null } | null,
+  now = new Date()
+) {
+  if (!sub) return false;
+  return isPaidPeriodActive(sub.status, sub.current_period_end, now);
 }

@@ -1,6 +1,7 @@
 import { parseStrictDate } from "@/lib/api/panchangam";
 import { getWebPanchangamForDate } from "@/lib/billing/web-panchangam";
 import { jsonError } from "@/lib/auth/request";
+import { webRateLimit } from "@/lib/http/web-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,6 +9,9 @@ export const revalidate = 0;
 // Website date explorer. Signed-in members only; which dates are allowed is
 // decided server-side from the subscription.
 export async function GET(request: Request) {
+  const limited = webRateLimit(request);
+  if (limited) return limited;
+
   const url = new URL(request.url);
   const date = url.searchParams.get("date");
 

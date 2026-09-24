@@ -2,7 +2,13 @@ import "server-only";
 
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
-import { PLANS, PRO_PERIOD_DAYS, type SubscriptionStatus } from "@/lib/billing/plans";
+import {
+  API_PERIOD_DAYS,
+  API_PLAN,
+  PLANS,
+  PRO_PERIOD_DAYS,
+  type SubscriptionStatus,
+} from "@/lib/billing/plans";
 
 export type BillingProviderId = "mock" | "razorpay";
 
@@ -51,12 +57,15 @@ export interface CheckoutSession {
   amountInr: number;
 }
 
-export async function createProCheckout(): Promise<CheckoutSession> {
+export type PaidProduct = "pro" | "api";
+
+export async function createCheckout(product: PaidProduct): Promise<CheckoutSession> {
   const provider = getBillingProvider();
+  const amountInr = product === "api" ? API_PLAN.priceInr : PLANS.pro.priceInr;
 
   if (provider === "mock") {
     requireServiceClient();
-    return { provider, checkoutId: `mock_${randomUUID()}`, amountInr: PLANS.pro.priceInr };
+    return { provider, checkoutId: `mock_${randomUUID()}`, amountInr };
   }
 
   if (provider === "razorpay") {
@@ -112,6 +121,51 @@ export async function cancelSubscription(userId: string) {
     .eq("status", "active");
 
   if (error) throw new BillingError("DATABASE_ERROR", "Couldn't update your subscription.");
+}
+
+/** Mock provider only: activates (or renews) the API subscription for 30 days. */
+export async function confirmMockApiPayment(userId: string, checkoutId: string) {
+  if (getBillingProvider() !== "mock") {
+    throw new BillingError("PROVIDER_UNAVAILABLE", "Test payments are disabled.", 403);
+  }
+
+  const now = new Date();
+  const end = new Date(now.getTime() + API_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+  const client = requireServiceClient();
+  const { error } = await client.from("api_subscriptions").upsert(
+    {
+      user_id: userId,
+      status: "active",
+      provider: "mock",
+      provider_subscription_id: checkoutId,
+      provider_payment_id: `mock_pay_${randomUUID()}`,
+      current_period_start: now.toISOString(),
+      current_period_end: end.toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) throw new BillingError("DATABASE_ERROR", "Couldn't update your API subscription.");
+}
+
+/**
+ * Cancel at period end. API keys keep working until current_period_end and
+ * then stop authenticating (the entitlement check fails) — they are not
+ * deleted, so usage history stays intact.
+ */
+export async function cancelApiSubscription(userId: string) {
+  if (getBillingProvider() === "razorpay") {
+    throw new BillingError("PROVIDER_UNAVAILABLE", "Subscription management is coming soon.", 503);
+  }
+
+  const client = requireServiceClient();
+  const { error } = await client
+    .from("api_subscriptions")
+    .update({ status: "cancelled" })
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  if (error) throw new BillingError("DATABASE_ERROR", "Couldn't update your API subscription.");
 }
 
 type SubscriptionWrite = {

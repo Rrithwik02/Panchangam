@@ -1,5 +1,6 @@
 import { getViewer } from "@/lib/billing/entitlement";
-import { BillingError, confirmMockPayment } from "@/lib/billing/provider";
+import { BillingError, confirmMockApiPayment, confirmMockPayment } from "@/lib/billing/provider";
+import { readRequestedProduct } from "@/lib/billing/request-plan";
 import { isSameOriginRequest, jsonError, PRIVATE_NO_STORE } from "@/lib/auth/request";
 
 export const dynamic = "force-dynamic";
@@ -12,14 +13,15 @@ export async function POST(request: Request) {
   const viewer = await getViewer();
   if (!viewer) return jsonError("UNAUTHENTICATED", "Please log in to continue.", 401);
 
-  const body = (await request.json().catch(() => null)) as { checkoutId?: unknown } | null;
+  const { product, body } = await readRequestedProduct(request);
   const checkoutId = typeof body?.checkoutId === "string" ? body.checkoutId : "";
   if (!/^mock_[0-9a-f-]{36}$/.test(checkoutId)) {
     return jsonError("INVALID_CHECKOUT", "This checkout session is not valid.", 400);
   }
 
   try {
-    await confirmMockPayment(viewer.userId, checkoutId);
+    if (product === "api") await confirmMockApiPayment(viewer.userId, checkoutId);
+    else await confirmMockPayment(viewer.userId, checkoutId);
     return Response.json({ success: true }, { headers: PRIVATE_NO_STORE });
   } catch (error) {
     if (error instanceof BillingError) return jsonError(error.code, error.message, error.status);

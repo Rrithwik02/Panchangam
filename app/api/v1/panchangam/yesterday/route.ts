@@ -1,20 +1,9 @@
-import { normalizeLocation } from "@/lib/api/panchangam";
-import { getPanchangamYesterday } from "@/lib/services/panchangam-service";
+import { apiRoute } from "@/lib/api-access";
+import { panchangamYesterday } from "@/lib/api-access/endpoints";
 
+// Paid API: API key + active API subscription, rate/burst/concurrency limits
+// and monthly quota are enforced in lib/api-access before any data is read.
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const maxDuration = 10;
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const locationResult = normalizeLocation({
-    latitude: url.searchParams.get("latitude"),
-    longitude: url.searchParams.get("longitude"),
-    timezone: url.searchParams.get("timezone"),
-  });
-
-  if (locationResult.error) {
-    return locationResult.error;
-  }
-
-  return getPanchangamYesterday(locationResult.location);
-}
+export const GET = apiRoute(panchangamYesterday);

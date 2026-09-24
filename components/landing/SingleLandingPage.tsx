@@ -57,12 +57,12 @@ export function SingleLandingPage({
           query.set("longitude", loc.longitude.toString());
         }
 
-        // Tomorrow goes through the session-aware website endpoint, which
-        // returns the full day for Pro subscribers and the preview otherwise.
+        // Website endpoints (not the paid /api/v1 API). Tomorrow is
+        // session-aware: the full day for Pro subscribers, the preview otherwise.
         const endpoint =
           mode === "tomorrow"
             ? `/api/web/panchangam/tomorrow?${query}`
-            : `/api/v1/panchangam/${mode}?${query}`;
+            : `/api/web/panchangam/${mode}?${query}`;
         const res = await fetch(endpoint, { cache: "no-store" });
 
         if (requestId !== latestRequestIdRef.current) return; // superseded by a newer request
@@ -120,9 +120,14 @@ export function SingleLandingPage({
       timezone,
     };
 
-    const initialFetchTimeout = window.setTimeout(() => {
-      void fetchRelativeData("today", timezoneOnlyLocation);
-    }, 0);
+    // The server already rendered Today for its own timezone; only refetch
+    // when the visitor's timezone differs (it can be a different date).
+    const initialFetchTimeout =
+      timezone === initialLocation.timezone
+        ? undefined
+        : window.setTimeout(() => {
+            void fetchRelativeData("today", timezoneOnlyLocation);
+          }, 0);
 
     if (typeof navigator !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
