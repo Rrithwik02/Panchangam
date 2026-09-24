@@ -1,34 +1,9 @@
-import { normalizeLocation } from "@/lib/api/panchangam";
-import { getCalendarMonthResponse } from "@/lib/services/panchangam-service";
+import { apiRoute } from "@/lib/api-access";
+import { calendarMonth } from "@/lib/api-access/endpoints";
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const locationResult = normalizeLocation({
-    latitude: url.searchParams.get("latitude"),
-    longitude: url.searchParams.get("longitude"),
-    timezone: url.searchParams.get("timezone"),
-  });
+// Paid API: API key + active API subscription, rate/burst/concurrency limits
+// and monthly quota are enforced in lib/api-access before any data is read.
+export const dynamic = "force-dynamic";
+export const maxDuration = 10;
 
-  if (locationResult.error) {
-    return locationResult.error;
-  }
-
-  const year = Number(url.searchParams.get("year"));
-  const month = Number(url.searchParams.get("month"));
-
-  if (!Number.isInteger(year) || year < 1) {
-    return Response.json(
-      { success: false, error: { code: "INVALID_YEAR", message: "A valid year is required." } },
-      { status: 400 }
-    );
-  }
-
-  if (!Number.isInteger(month) || month < 1 || month > 12) {
-    return Response.json(
-      { success: false, error: { code: "INVALID_MONTH", message: "A valid month is required." } },
-      { status: 400 }
-    );
-  }
-
-  return getCalendarMonthResponse(year, month, locationResult.location);
-}
+export const GET = apiRoute(calendarMonth);

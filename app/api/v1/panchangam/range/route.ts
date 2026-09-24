@@ -1,36 +1,9 @@
-import { normalizeLocation } from "@/lib/api/panchangam";
-import { getPanchangamRangeResponse } from "@/lib/services/panchangam-service";
+import { apiRoute } from "@/lib/api-access";
+import { panchangamRange } from "@/lib/api-access/endpoints";
 
+// Paid API: API key + active API subscription, rate/burst/concurrency limits
+// and monthly quota are enforced in lib/api-access before any data is read.
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const maxDuration = 10;
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const locationResult = normalizeLocation({
-    latitude: url.searchParams.get("latitude"),
-    longitude: url.searchParams.get("longitude"),
-    timezone: url.searchParams.get("timezone"),
-  });
-
-  if (locationResult.error) {
-    return locationResult.error;
-  }
-
-  const startDate = url.searchParams.get("start_date");
-  const endDate = url.searchParams.get("end_date");
-
-  if (!startDate || !endDate) {
-    return Response.json(
-      {
-        success: false,
-        error: {
-          code: "INVALID_DATE_RANGE",
-          message: "Both start_date and end_date are required.",
-        },
-      },
-      { status: 400 }
-    );
-  }
-
-  return getPanchangamRangeResponse(startDate, endDate, locationResult.location);
-}
+export const GET = apiRoute(panchangamRange);

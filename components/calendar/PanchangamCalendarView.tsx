@@ -60,7 +60,7 @@ export function PanchangamCalendarView({
     try {
       const timezone = location?.timezone || "Asia/Kolkata";
       const res = await fetch(
-        `/api/v1/panchangam/date?date=${dateStr}&timezone=${encodeURIComponent(timezone)}`,
+        `/api/web/panchangam/date?date=${dateStr}&timezone=${encodeURIComponent(timezone)}`,
         { cache: "no-store" }
       );
       if (res.ok) {

@@ -6,7 +6,14 @@ import { accountButton } from "@/components/account/AccountUI";
 import { FormMessage } from "@/components/auth/AuthUI";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | null }) {
+export function CancelSubscriptionButton({
+  periodEnd,
+  product = "pro",
+}: {
+  periodEnd: string | null;
+  product?: "pro" | "api";
+}) {
+  const planName = product === "api" ? "the API plan" : "Pro";
   const router = useRouter();
   const { refreshPlan } = useAuth();
   const [confirming, setConfirming] = useState(false);
@@ -17,7 +24,11 @@ export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | nu
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/billing/cancel", { method: "POST" });
+      const res = await fetch("/api/billing/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: product }),
+      });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         setError(body?.error?.message ?? "We couldn't cancel your subscription. Please try again.");
@@ -44,7 +55,7 @@ export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | nu
   return (
     <div className="space-y-3 rounded-xl border border-border bg-card-muted/50 p-4">
       <p className="text-sm">
-        Cancel Pro? You&apos;ll keep access{periodEnd ? ` until ${periodEnd}` : " until the end of this period"}, and
+        Cancel {planName}? You&apos;ll keep access{periodEnd ? ` until ${periodEnd}` : " until the end of this period"}, and
         it won&apos;t renew.
       </p>
       {error && <FormMessage tone="error">{error}</FormMessage>}
@@ -53,7 +64,7 @@ export function CancelSubscriptionButton({ periodEnd }: { periodEnd: string | nu
           {pending ? "Cancelling…" : "Yes, cancel"}
         </button>
         <button type="button" onClick={() => setConfirming(false)} className={accountButton.secondary}>
-          Keep Pro
+          Keep {product === "api" ? "API plan" : "Pro"}
         </button>
       </div>
     </div>

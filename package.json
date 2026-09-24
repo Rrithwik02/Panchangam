@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npm run build && node --test tests/api-contract.test.mjs tests/auth-access.test.mjs && node --experimental-strip-types --test tests/pro-access.test.mjs"
+    "test": "npm run build && node --test tests/api-contract.test.mjs tests/auth-access.test.mjs && node --experimental-strip-types --test tests/pro-access.test.mjs && npm run test:api",
+    "typecheck": "tsc --noEmit",
+    "test:api": "node --experimental-strip-types --no-warnings --import ./tests/support/register.mjs --test tests/api-access.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -29,6 +31,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

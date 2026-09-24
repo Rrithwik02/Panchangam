@@ -1,11 +1,15 @@
 import { getTomorrowDateForTimezone, normalizeLocation } from "@/lib/api/panchangam";
 import { getWebPanchangamForDate } from "@/lib/billing/web-panchangam";
+import { webRateLimit } from "@/lib/http/web-rate-limit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // Website Tomorrow view: full Panchangam for Pro, the existing preview for Free.
 export async function GET(request: Request) {
+  const limited = webRateLimit(request);
+  if (limited) return limited;
+
   const url = new URL(request.url);
   const locationResult = normalizeLocation({
     latitude: url.searchParams.get("latitude"),
