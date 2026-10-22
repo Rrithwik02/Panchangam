@@ -7,8 +7,10 @@ import { parseStrictDate } from "@/lib/api/panchangam";
 import { getViewer } from "@/lib/billing/entitlement";
 
 export const metadata: Metadata = {
-  title: "Explore 50 Years of Panchangam — Panchangam Pro",
+  title: "Explore 50 Years of Panchangam",
   description: "Search the complete Panchangam for any date from 2000 to 2047.",
+  // Members-only tool with no public content yet, so keep it out of the index.
+  robots: { index: false, follow: true },
 };
 export const dynamic = "force-dynamic";
 

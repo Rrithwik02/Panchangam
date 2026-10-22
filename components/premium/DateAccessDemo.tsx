@@ -49,7 +49,7 @@ export function PremiumPaywallModal({
         </ul>
         <div className="flex flex-col gap-2 pt-2">
           <Button asChild>
-            <Link href="/premium" onClick={() => onOpenChange(false)}>
+            <Link href="/#premium" onClick={() => onOpenChange(false)}>
               Unlock Premium
             </Link>
           </Button>

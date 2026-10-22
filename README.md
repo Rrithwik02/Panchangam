@@ -15,9 +15,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the landing page.
 
 ## Pages
 
-- `/` — Marketing landing page
-- `/today` — Today's Panchangam (stub product page)
-- `/premium` — Premium information
+- `/` — Today's Panchangam + pricing (`/today` and `/premium` redirect here)
 - `/docs` — API documentation
 - `/about`, `/contact`, `/privacy`, `/terms` — Footer pages
 

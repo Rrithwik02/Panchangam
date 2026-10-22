@@ -8,6 +8,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { TodayPanchangamSection } from "@/components/landing/TodayPanchangamSection";
 import { SunMoonSection } from "@/components/landing/SunMoonSection";
 import { ImportantTimingsSection } from "@/components/landing/ImportantTimingsSection";
+import { FAQSection } from "@/components/landing/FAQSection";
 import { ProductTiersSection } from "@/components/landing/ProductTiersSection";
 import {
   fetchCityFromCoordinates,
@@ -194,11 +195,14 @@ export function SingleLandingPage({
           {/* Section 4: Important Timings */}
           <ImportantTimingsSection data={dayData} />
 
-          {/* Section 5: Basic / Premium / API Product Tiers */}
+          {/* Section 5: FAQ (server-rendered; mirrored in the homepage FAQPage JSON-LD) */}
+          <FAQSection />
+
+          {/* Section 6: Basic / Premium / API Product Tiers */}
           <ProductTiersSection />
         </main>
 
-        {/* Section 6: Footer */}
+        {/* Section 7: Footer */}
         <Footer />
       </div>
     </TimeOfDayProviderBase>

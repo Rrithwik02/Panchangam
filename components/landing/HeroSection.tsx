@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MapPin, ArrowDown, CalendarRange } from "lucide-react";
 import { CelestialHeroCanvas } from "@/components/celestial/CelestialHeroCanvas";
 import { formatLocationCity } from "@/lib/location";
+import { buildDaySummary } from "@/lib/day-summary";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { PanchangamDay, LocationParameters } from "@/lib/types/panchangam";
 
@@ -37,17 +38,17 @@ export function HeroSection({ data, location, cityName }: HeroSectionProps) {
           <span className="text-border">·</span>
           <span>Local time · {loc.timezone}</span>
           <span className="text-border">·</span>
-          <span className="font-semibold text-foreground">{data.dateLabel}</span>
+          <time dateTime={data.date} className="font-semibold text-foreground">{data.dateLabel}</time>
         </div>
 
         {/* Hero Title */}
         <h1 className="text-4xl sm:text-6xl font-serif-title font-bold tracking-tight text-foreground leading-tight">
-          Panchangam
+          Today&apos;s Panchangam
         </h1>
 
-        {/* Short Description */}
+        {/* Plain-language summary of the day, server-rendered so crawlers and AI answers can quote it */}
         <p className="text-sm sm:text-lg text-muted font-normal max-w-xl mx-auto leading-relaxed">
-          Daily astronomical calendar & celestial timings. Explore Tithi, Nakshatra, solar trajectory, and auspicious periods.
+          {buildDaySummary(data)}
         </p>
 
         {/* Primary CTA + secondary 50-year explorer (Pro) */}

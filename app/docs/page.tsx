@@ -1,7 +1,18 @@
 import Link from "next/link";
+import { PageShell } from "@/components/layout/PageShell";
+import { pageMetadata } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site";
 import { getApiConfig } from "@/lib/api-access/config";
 import { endpointDocs, ERROR_DOCS } from "@/lib/api-access/docs";
 import { formatPrice, SUPPORTED_RANGE } from "@/lib/billing/plans";
+
+export const metadata = pageMetadata({
+  title: "Panchangam API – Daily Hindu Calendar JSON API",
+  description:
+    "REST API for daily Panchangam data from 2000 to 2047: Tithi, Nakshatra, Yoga, Karana, Rahu Kalam and festivals. OpenAPI 3 spec and key-based access.",
+  path: "/docs",
+  absoluteTitle: true,
+});
 
 const code = "rounded bg-card-muted px-1.5 py-0.5 font-mono text-[0.85em]";
 
@@ -10,7 +21,8 @@ export default function DocsPage() {
   const endpoints = endpointDocs(config);
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+    <PageShell>
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">API Docs</p>
@@ -37,7 +49,7 @@ export default function DocsPage() {
         </p>
         <pre className="mt-3 overflow-x-auto rounded-xl bg-card-muted p-4 text-xs">
 {`curl -H "Authorization: Bearer sk_live_…" \\
-  "https://<your-domain>/api/v1/panchangam/date?date=2026-09-23&timezone=Asia/Kolkata"`}
+  "${SITE_URL}/api/v1/panchangam/date?date=2026-09-23&timezone=Asia/Kolkata"`}
         </pre>
         <ul className="mt-4 list-disc space-y-1.5 pl-5 text-sm text-muted">
           <li>Keys are accepted only in the header. A key in the URL is rejected, because URLs leak into logs and browser history.</li>
@@ -134,6 +146,7 @@ export default function DocsPage() {
           echoed in the response metadata. Responses contain only the documented Panchangam fields.
         </p>
       </section>
-    </main>
+    </div>
+    </PageShell>
   );
 }

@@ -15,8 +15,17 @@ export function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted">
+            <Link href="/about" className="hover:text-foreground transition-colors">
+              About
+            </Link>
+            <Link href="/docs" className="hover:text-foreground transition-colors">
+              API Docs
+            </Link>
             <Link href="/api/openapi" className="hover:text-foreground transition-colors">
               OpenAPI Specification
+            </Link>
+            <Link href="/contact" className="hover:text-foreground transition-colors">
+              Contact
             </Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">
               Privacy
