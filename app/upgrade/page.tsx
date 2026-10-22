@@ -7,7 +7,7 @@ import { UpgradeCheckout } from "@/components/billing/UpgradeCheckout";
 import { getEntitlement } from "@/lib/billing/entitlement";
 import { SUPPORTED_RANGE } from "@/lib/billing/plans";
 
-export const metadata: Metadata = { title: "Upgrade to Pro — Panchangam" };
+export const metadata: Metadata = { title: "Upgrade to Pro", robots: { index: false, follow: true } };
 export const dynamic = "force-dynamic";
 
 const FEATURES = [

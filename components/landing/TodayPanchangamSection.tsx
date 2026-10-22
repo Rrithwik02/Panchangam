@@ -52,7 +52,7 @@ export function TodayPanchangamSection({
               Daily Panchangam
             </span>
             <h2 className="text-3xl sm:text-4xl font-serif-title font-semibold text-foreground">
-              {data.dateLabel}
+              <time dateTime={data.date}>{data.dateLabel}</time>
             </h2>
             {/* Vara/Paksha move into the calendar-facts row below for Today/Yesterday;
                 Tomorrow's lighter preview doesn't get that row, so it's shown here instead. */}

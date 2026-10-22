@@ -19,7 +19,9 @@ export function getBrowserTimezone(fallback = "UTC") {
     return fallback;
   }
 
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || fallback;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || fallback;
+  // Some browsers still report India as the legacy "Asia/Calcutta" id.
+  return timezone === "Asia/Calcutta" ? "Asia/Kolkata" : timezone;
 }
 
 export function isValidTimezone(timezone: string) {

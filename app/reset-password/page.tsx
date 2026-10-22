@@ -3,7 +3,7 @@ import { AuthShell, FormMessage, TextLink } from "@/components/auth/AuthUI";
 import { NewPasswordForm } from "@/components/auth/NewPasswordForm";
 import { getViewer } from "@/lib/billing/entitlement";
 
-export const metadata: Metadata = { title: "Choose a new password — Panchangam", robots: { index: false } };
+export const metadata: Metadata = { title: "Choose a new password", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 // Reached from the emailed reset link via /auth/callback, which has already

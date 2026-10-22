@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AccountNav } from "@/components/account/AccountNav";
 import { getViewer } from "@/lib/billing/entitlement";
 
-export const metadata: Metadata = { title: "Account — Panchangam", robots: { index: false } };
+export const metadata: Metadata = { title: "Account", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {

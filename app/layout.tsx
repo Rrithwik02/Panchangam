@@ -1,58 +1,33 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClientProviders } from "@/components/providers/ClientProviders";
+import { GOOGLE_SITE_VERIFICATION, HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { jsonLdString, siteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
-const siteUrl = "https://panchangam.app";
-
+// No root-level canonical on purpose: a layout canonical would be inherited by
+// every page that doesn't set its own and point them all at the homepage.
 export const metadata: Metadata = {
-  title: "Panchangam — Today's Panchangam, Beautifully Simplified",
-  description:
-    "Check today's Panchangam with Tithi, Nakshatra, Rahu Kalam, sunrise, festivals, and more. Free for today. Premium unlocks any date.",
-  keywords: [
-    "today's panchangam",
-    "panchangam today",
-    "hindu panchangam",
-    "tithi today",
-    "nakshatra today",
-    "rahu kalam today",
-    "telugu panchangam",
-  ],
+  metadataBase: new URL(SITE_URL),
+  title: { default: HOME_TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   openGraph: {
-    title: "Panchangam — Today's Panchangam, Beautifully Simplified",
-    description:
-      "Everything you need to know about today, in one clear and peaceful experience.",
-    url: siteUrl,
-    siteName: "Panchangam",
+    siteName: SITE_NAME,
     locale: "en_IN",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Panchangam — Today's Panchangam, Beautifully Simplified",
-    description:
-      "Check today's Tithi, Nakshatra, timings, festivals, and more.",
-  },
+  twitter: { card: "summary_large_image" },
   robots: {
     index: true,
     follow: true,
   },
+  verification: { google: GOOGLE_SITE_VERIFICATION },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      name: "Panchangam",
-      url: siteUrl,
-      description:
-        "Today's Panchangam, beautifully simplified. Free daily Panchangam with Premium for any date.",
-    },
-    {
-      "@type": "Organization",
-      name: "Panchangam",
-      url: siteUrl,
-    },
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0d13" },
   ],
 };
 
@@ -63,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       data-theme="light"
       className="h-full antialiased"
     >
@@ -73,7 +48,7 @@ export default function RootLayout({
         </a>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdString(siteJsonLd()) }}
         />
         <ClientProviders>{children}</ClientProviders>
       </body>

@@ -40,7 +40,7 @@ export function FreeVsPremium() {
                 ))}
               </ul>
               <Button asChild className="mt-8 w-full">
-                <Link href="/today">View Today&apos;s Panchangam</Link>
+                <Link href="/">View Today&apos;s Panchangam</Link>
               </Button>
             </div>
           </AnimatedSection>
@@ -63,7 +63,7 @@ export function FreeVsPremium() {
                 ))}
               </ul>
               <Button asChild variant="secondary" className="mt-8 w-full">
-                <Link href="/premium">Explore Premium</Link>
+                <Link href="/#premium">Explore Premium</Link>
               </Button>
             </div>
           </AnimatedSection>

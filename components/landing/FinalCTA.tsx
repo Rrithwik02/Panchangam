@@ -17,7 +17,7 @@ export function FinalCTA() {
         </p>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild size="lg">
-            <Link href="/today">View Today&apos;s Panchangam</Link>
+            <Link href="/">View Today&apos;s Panchangam</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
             <Link href="#premium">Explore Premium</Link>
